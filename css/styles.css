@@ -1,0 +1,67 @@
+
+
+body {
+    background-color: white
+}
+
+.modal-header,
+.modal-body {
+    padding: 10px !important;
+    padding-top: 5px !important;
+}
+
+.form-select {
+    min-width: 150px;
+}
+
+[name^=sel-ori],
+[name^=sel-rea] {
+    min-width: 200px;
+}
+
+#page-selected {
+    background-color: #dee2e6 !important;
+}
+
+.page-link {
+    background-color: #fff !important;
+}
+
+/**********table************/
+
+table {
+    text-align: center;
+}
+
+
+label,
+h3,
+h4,
+th,
+#th-fecha {
+    color: #195baf;
+}
+
+#th-fecha {
+    border-color: #195baf;
+}
+
+.btn {
+    height: 35px;
+}
+
+img {
+    height: 24px;
+}
+
+td:hover>small {
+    display: block;
+}
+
+small {
+    display: none;
+}
+
+div.w-25:nth-child(3) {
+    margin-right: 80px;
+}

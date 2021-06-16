@@ -1,0 +1,320 @@
+<?php
+//DATA LIST
+echo "<datalist id=$camposf[$i]  >";
+                                echo "<option value=''></option>";
+                                foreach ($res as $r) {
+                                    echo "<option value=$r[1]></option>";
+                                }
+                                echo "</datalist>";
+                                echo "<input id='$camposf[$i]-filter' class='form-control filter' list=$camposf[$i] name='numeros' type='number' value='$value' ></div>";
+//MODAL STATIC 5.0
+          <input id="btn-admin" type="button" class="btn btn-warning btn-admin mx-2"  value="Administración" 
+                    data-bs-target="#modal-admin" data-bs-toggle="modal" data-bs-target="#staticBackdrop"  name="administracion"  />   
+CARGA DATOS///////////////////////////////////////////
+$camposn = array('numero', 'id_tipo', 'id_operador', 'id_estado', 'id_tipo_numero', 'id_servidor', 'id_entrega', 'cliente_actual', 'numeros_desvios', 'observaciones');
+for($j=1,$k=123456,$i=100000001;$k<123556,$j<101, $i<100000101 ;$k++, $j++,$i++){
+    $values = ["$i",2,6,1,11,5,1,'Jaime'.$j,"$k","observ".$j];
+    $query = "INSERT INTO numeracion (numero, id_tipo, id_operador, id_estado, id_tipo_numero, id_servidor, id_entrega, cliente_actual, numeros_desvios, observaciones) values (?,?,?,?,?,?,?,?,?,?) ";
+    insert($query, $values);
+}
+//NO SALTE PANTALLA 
+NO pontclass="col-4" o asi
+///////////////////////////////////////////////////////
+$res = carga("SELECT * FROM $t ORDER BY $t ASC");
+$admins[$t] = array($res);
+////////////////////////////////////////////////////////////
+$fecha = new DateTime();
+$fec =  $fecha->format('Y-m-d h:m:s');
+for ($i=0; $i<100; $i++) {
+    $q ="INSERT INTO `numeracion`( `numero`, tipo_numero, `operador`, `ruta`, `estado`, `fecha_alta`, `tipo`, `servidor`, `entrega`, `fecha_ultimo_cambio`, `cliente_actual`, `numeros_desvios`, `descripcion`, `observaciones`) 
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    $v = array("1112223$i", 'Número interno', 'Vodafone', "ruta$i", 'Activado', "$fec" ,'VOIP', "servidor$i","entrega$i","$fec", "fede$i", "11111,22222$i","descripcion$i","observaciones$i");
+    insert($q, $v);
+}
+for ($i=0; $i<10; $i++) {
+    $q ="INSERT INTO `numeracion_historial`( `numero`, tipo_numero, `operador`, `ruta`, `estado`, `fecha_alta`, `tipo`, `servidor`, `entrega`, `fecha_ultimo_cambio`, `cliente_actual`, `numeros_desvios`, `descripcion`, `observaciones`,`motivo_baja`) 
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    $v = array("1112223$i", 'Número interno', 'Vodafone', "ruta$i", 'Activado', "$fec" ,'VOIP', "servidor$i","entrega$i","$fec", "fede$i", "11111,22222$i","descripcion$i","observaciones$i","Baja de línea");
+    insert($q, $v);
+}
+
+
+echo array_key_exists($camposf[$i], $_POST) ? $_POST[$camposf[$i]] : 'Todos';//Mantentselected
+
+
+$res = carga("SELECT * FROM TIPO ORDER BY 'TIPO'");
+    foreach($res as $r) {
+        if($r['tipo'] == $tipo) {
+            $id = $r['id'];
+        } 
+    }
+
+?>
+
+
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+<style>
+#tabla {
+    visibility: hidden !important;
+}
+</style>
+<script>
+  /* ops: array de options, de la tabla padre
+     * id:  id de la tabla padre
+     * return: valor del campo de la tabla padre
+     */
+    function campoPadre(ops, id) {
+        for (i = 0; i < ops.length; i++) {
+            let v = $(ops[i]).val();
+            if (v == id) {
+                html = $(ops[i]).html();
+                return html;
+            }
+        }
+    }
+h = campoPadre($('#select-motivo_baja-admin option'), v);
+$('#info-' + c).html(h);
+//Actualiza fecha_ultimo_cambio
+function actualizaFechaUltimoCambio(fechaUl) {
+    let myDat = new Date();
+    fecha = myDat.getFullYear() + '-' + ('0' + (myDat.getMonth() + 1)).slice(-2) +
+        '-' + ('0' +
+            myDat.getDate())
+        .slice(-2) +
+        ' ' + myDat.getHours() + ':' + ('0' + (myDat.getMinutes())).slice(-2) +
+        ':' + myDat
+        .getSeconds();
+    $('#' + fechaUl).val(v);
+}
+
+//Actualizamos fecha_ultimo_cambio y hora en nuevo en el modal graba-actualizar
+function actualizaFecha() {
+    actualizaFechaUltimoCambio('fecha_ultimo_cambio');
+    let fa = $('#fecha_alta').val();
+    let myDate = new Date(fa);
+    let myDat = new Date();
+    let hor = myDate.getHours();
+    let hora = '';
+    if (hor == '0') hora = '12';
+    if (hor == '12') hora = '00';
+    if (hora != '') fecha = myDate.getFullYear() + '-' + ('0' + (myDate.getMonth() +
+            1)).slice(-
+            2) + '-' + (
+            '0' + myDate
+            .getDate()).slice(-2) + ' ' + hora + ':' + ('0' + (myDate
+            .getMinutes())).slice(-
+            2) + ':' + myDat
+        .getSeconds();
+    else fecha = myDate.getFullYear() + '-' + ('0' + (myDate.getMonth() + 1)).slice(
+            -2) + '-' +
+        ('0' + myDate
+            .getDate())
+        .slice(-2) + ' ' + hor + ':' + ('0' + (myDate.getMinutes())).slice(-2) +
+        ':' + myDat
+        .getSeconds();
+    $('#fecha_alta').val(fecha);
+}
+
+
+//tabla listado
+campo = campos[i];
+for (i = 1; i <= size; i++) {
+    if (campo == 'id_operador' || campo == 'id_estado') {
+        im = $('img[id*=img-' + campo + i + ']');
+        vi = $(im).attr('indice');
+        if (vf == vi) {
+            $(im).attr('src', 'images/' + ha + '.jpg'); //html img
+            $(im).attr('title', ha); //html al title de la img
+            break;
+        }
+    } else {
+        td = $('td[id*=' + campo + i + ']');
+        vt = $(td).attr('title');
+        if (vt == vf) {
+            $(td).html(ha); //html td  
+            break;
+        }
+    }
+}
+Array.prototype.myUcase = function() {
+    var i;
+    for (i = 0; i < this.length; i++) {
+        this[i] = this[i].toUpperCase();
+    }
+};
+
+function myFunction() {
+    var fruits = ["Banana", "Orange", "Apple", "Mango"];
+    fruits.myUcase();
+    document.getElementById("demo").innerHTML = fruits;
+}
+//optionnnnnnnnnnnnnnnnnnnnnnnn
+$('option').click(function() {
+    id = $(this).val();
+    op = $(this).html();
+    tabla = $(this).attr('tabla');
+});
+$(select).val() //Es el val del option
+
+//ajaxxxxxxxxxxxxxx
+$("#abre-modal").bind("submit", function() {
+    // Capturamnos el boton de envío
+    var btnEnviar = $("#btn-abre-modal");
+    $.ajax({
+        type: $(this).attr("method"),
+        url: $(this).attr("action"),
+        data: $(this).serialize(),
+        beforeSend: function() {
+            btnEnviar.val(
+                "Enviando"); // Para input de tipo button
+            btnEnviar.attr("disabled", "disabled");
+        },
+        complete: function(data) {
+            btnEnviar.val("Enviar formulario");
+            btnEnviar.removeAttr("disabled");
+        },
+        success: function(data) {
+            $('#modal-admin').modal('show');
+        },
+        error: function(data) {
+            alert(
+                "Problemas al tratar de enviar el formulario"
+            );
+        }
+    });
+    //  Hace que el modal siga abierto
+    return false;
+});
+</script>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+    integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous">
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+    integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">
+</script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+    integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
+</script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/momentjs/2.14.1/moment.min.js"></script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js">
+</script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
+</script>
+<script>
+///////////
+//Reseteo de campos
+$('.btn-nuevo').click(function() {
+    bindeaSelNueEdi();
+    bindeaOption();
+    //datapicker();
+    event.preventDefault();
+    $('#numero').val('');
+    $('#numero').prop('readonly', false);
+    var myDate = new Date();
+    fecha = myDate.getFullYear() + '-' + ('0' + (myDate.getMonth() + 1))
+        .slice(-2) +
+        '-' + ('0' + myDate
+            .getDate())
+        .slice(-2) + ' ' + myDate.getHours() + ':' + ('0' + (myDate
+            .getMinutes()))
+        .slice(-2) + ':' +
+        myDate
+        .getSeconds();
+    $('#cliente_actual').val('')
+    $('#datetimepicker').datetimepicker().children('input').val(v);
+    $('#numeros_desvios').val('');
+    $('#descripcion').val('');
+    $('#observaciones').val('');
+    $('#btn-modal-submit').val('Grabar');
+    $('#btn-modal-submit').attr('name', 'graba');
+    $('#m-titulo').html('Nuevo registro');
+});
+
+//Datapicktfuncion para activar datapicker
+<script src = "https://cdn.jsdelivr.net/momentjs/2.14.1/moment.min.js" >
+</script>
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js">
+</script>
+function datapicker() {
+var myDate = new Date();
+vi = myDate.getFullYear() + '-' + ('0' + (myDate.getMonth() + 1)).slice(-2) +
+'-' + ('0' +
+myDate.getDate())
+.slice(-2) + ' ' + myDate.getHours() + ':' + ('0' + (myDate.getMinutes()))
+.slice(-2) + ':' +
+myDate
+.getSeconds();
+$('#datetimepicker').datetimepicker().children('input').val(vi);
+}
+</script>
+<div class="form-group">
+    <label class="control-label">Fecha de Alta</label>
+    <div id='datetimepicker' class='input-group date '>
+        <input id="fecha_alta" type='text' name="fecha_alta" class="form-control" />
+        <span class="input-group-addon">
+            <span class="glyphicon glyphicon-calendar"></span>
+        </span>
+    </div>
+</div>
+
+<div class="form-group" hidden>
+    <label class="control-label">Fecha de ultimo cambio</label>
+    <div id='datetimepicker1' class='input-group date'>
+        <input id="fecha_ultimo_cambio" type='text' name="fecha_ultimo_cambio" class="form-control" />
+        <span class="input-group-addon">
+            <span class="glyphicon glyphicon-calendar"></span>
+        </span>
+    </div>
+</div>
+<?php   if($t == 'operador') {
+        ?> <div class="form-group mr-4">
+    <label class="control-label"><?php echo $pcampos[5]; ?></label>
+    <div id='datetimepicker' class='input-group date'>
+        <input id="fecha_alta" type='text' name="fecha_alta" class="form-control" />
+        <span class="input-group-addon">
+            <span class="glyphicon glyphicon-calendar"></span>
+        </span>
+    </div>
+</div>
+
+
+
+
+<div class="form-group ">
+    <form method="post" enctype="multipart/form-data" autocomplete="off">
+        <div class="row  p-4  mb-0">
+            <h4 class="mb-0 mr-5" for="tipo">Tipo</h4>
+            <input class="btn btn-sm btn-success ml-4 btn-anade-tipo-admin" type="submit" id="" value="Añadir"
+                name="anade_tipo_admin">
+            <input class="btn btn-sm btn-warning mx-4 btn-update btn-update-tipo-admin" type="submit" id=""
+                value="Actualiza" name="update_tipo_admin">
+            <input class="btn btn-sm btn-dangtbtn-update btn-borrar-tipo-admin" type="submit" id=""
+                name="borrar_tipo_admin" value="Borrar">
+        </div>
+        <div class="row flex-nowrap px-4 ">
+            <input type="text" class="form-select  mr-4" id="tipo-admin" name="tipo_admin" required>
+            <select class="form-select" id="select-tipo-admin" name="select_tipo_admin">
+                <?php
+                $res = carga("SELECT * FROM TIPO ORDER BY 'TIPO'");
+                foreach ($res as $r) {
+                    $id = $r['id'];
+                    $tipo = $r['tipo'];
+                    echo "<option val=$id>$tipo</option>";
+                }
+                 ?>
+            </select>
+        </div>
+    </form>
+</div>
+
+

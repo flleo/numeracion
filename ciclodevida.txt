@@ -1,0 +1,9 @@
+INICIO
+
+1. Cargamos datos de tablas auxiliares : rellenmos los selects de admin
+2. Comprobamos post
+2.1. Acciones
+2.2. Bindeamos los filtros:  bindeaFiltros()
+3. Cargamos de la tabla principal filtrada: cargaDatosFiltrados()
+4. Rellenamos los filtros con los datos cargados y filtrados: filtros()
+5. Pintamos:    pagina()
