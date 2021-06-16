@@ -1,5 +1,11 @@
 <?php
+
 include 'consultas.php';
+require 'vendor/autoload.php';
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
+
 
 $tabla  = $condicion = $value = $titulo = $message = $motivo_baja = $tipo_numero = $id = $operador = $ruta = $descripcion =  $servidor = $entrega = $estado = $tipo = $fecha_alta = $fecha_ultimo_cambio =  $cliente_actual = $numeros_desvios = $observaciones = '';
 $numero = 'todos';
@@ -9,11 +15,15 @@ $camposn = array('numero', 'id_tipo', 'id_operador', 'id_estado', 'id_tipo_numer
 $camposb = array('numero', 'id_tipo', 'id_operador', 'id_estado', 'id_tipo_numero', 'id_servidor', 'id_entrega', 'fecha_alta', 'cliente_actual', 'numeros_desvios', 'observaciones', 'id_motivo_baja');
 $camposf = array('numeros', 'id_tipos', 'id_operadors', 'id_estados', 'id_tipo_numeros', 'id_servidors', 'id_entregas', 'fecha_altas', 'fecha_ultimo_cambios', 'cliente_actuals', 'numeros_desvioss', 'observacioness', 'id_motivo_bajas');
 $pcampos = array('Número', 'Operador', 'Tipo', 'Estado',  'Tipo número', 'Servidor', 'Entrega',  'Fecha&nbsp;alta', 'Fec.&nbsp;últ.&nbsp;cambio', 'Client.&nbsp;actual', 'Núm.&nbsp;de&nbsp;desvío', 'Descripción', 'Observaciones');
+$pcamposf = array('Numeros', 'Tipos', 'Operadores',  'Estados', 'Tipos&nbsp;numeros', 'Servidores', 'Entregas',  'Fechas&nbsp;altas', 'Fechas&nbsp;ult.&nbsp;cam.', 'Clientes&nbsp;actuales', 'Numeros&nbsp;de&nbsp;desvios', 'Observaciones', 'Motivos&nbsp;baja');
+$pcampose = array('Numeros', 'Tipos', 'Operadores',  'Estados', 'Tipos de numeros', 'Servidores', 'Entregas',  'Fechas de altas', 'Fechas últimos cambios', 'Clientes actuales', 'Numeros de desvios', 'Observaciones', 'Motivos de baja');
 $bcampos  = $values  = $filtros = $valuesRecuperados  = $res = [];
 $nregistros = 0;
 $pintado = $reactivado = false;
 
 //Inicio
+
+
 
 //quitar filtros
 if (isset($_POST['quitar_filtros'])) {
@@ -316,18 +326,99 @@ function fechaDesAsc()
 }
 
 
-///////////////////////////////////////////////
+//////////Funciones Excel/////////////////////////////////////
 
+function grabaExcel($res)
+{
+    global  $pcampose,$filename, $titulo;
 
+    $filename = 'exports/file.xlsx';
+    $titulo = $_POST['titulo'];
+    if ($titulo == 'numeracion') {
+        $size = sizeOf($pcampose) - 1;
+      //  $res = carga($titulo, '', 'ORDER BY  numero asc, fecha_ultimo_cambio desc');
+    } else {
+        $size = sizeOf($pcampose);
+     //   $res = carga($titulo, '', 'ORDER BY fecha_ultimo_cambio ');
+    }
+
+    $spread = new Spreadsheet();
+
+    $col = array('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M');
+    $row = 1;
+    $sheet = $spread->getActiveSheet();
+    $sheet->setTitle($titulo);
+    //Enunciado
+    for ($j = 0; $j < $size; $j++) {
+        $sheet->setCellValue($col[$j] . $row, $pcampose[$j]);
+    }
+    //Valores
+    foreach ($res as $re) {
+        $row++;
+        for ($j = 0; $j < $size; $j++) {
+            if ($re[$j] != null) {
+                $sheet->setCellValue($col[$j] . $row, $re[$j+1]);
+            }
+        }
+    }
+    $writer = new Xlsx($spread);
+    $writer->save($filename);
+    cargaEstilosExcel();
+}
+
+function cargaEstilosExcel()
+{
+    global $filename;
+    $spread = \PhpOffice\PhpSpreadsheet\IOFactory::load($filename);
+    $sheet = $spread->getActiveSheet();
+
+    foreach (range('A', 'M') as $columnID) {
+        $spread->getActiveSheet()->getColumnDimension($columnID)->setAutoSize(true);
+    }
+    $sheet->getStyle("A1:M1")->getFont()->setBold(true)->setSize(12);
+
+    //Generate the Excel File
+    $writer =  new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spread);
+    $writer->save($filename);
+    descarga();
+}
+
+function descarga()
+{
+    try {
+        global $filename, $titulo;
+        $spread = \PhpOffice\PhpSpreadsheet\IOFactory::load($filename);
+
+        $date = new DateTime('NOW', new DateTimeZone('Europe/Dublin'));
+        $d = $date->format('d-m-Y:H-m-s');
+        $file = $titulo . '-' . $d . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $file . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spread, 'Xlsx');
+        $writer->save('php://output');
+        exit;
+    } catch (InvalidArgumentException $e) {
+        $message = "<div class='alert alert-danger'>No hay datos grabados, consulte con su administrador </div>";
+    }
+}
+
+if (isset($_POST['exporta'])) {
+    $tabla = $_POST['titulo'];
+    bindeaFiltros();
+}
 
 //Funciones prepara listado para pintarlo/////////////////////////////////////////////////////////////
 
 //bindeaRecuperados los filtros
 function bindeaFiltros()
 {
-    global $camposf, $tabla, $tam, $condiciones, $ncampos;
+    global $camposf, $tabla, $tam,  $condiciones, $ncampos;
     $ncampos = 0;
     $condiciones = [];
+   
 
     //Quitamos el ultuimop filtro motivo_baja para numeracion
     if ($tabla == 'numeracion') {
@@ -374,7 +465,7 @@ function prepara($i)
 //Traemos de bd, con las condiciones y ordenados
 function cargaDatosFiltrados()
 {
-    global $condiciones, $tabla, $res, $condicion;
+    global $condiciones, $tabla, $res;
     //Orden de los registros 
     if ($tabla == 'numeracion_historial') {
         //Si historial incluimos th-feccha
@@ -392,13 +483,13 @@ function cargaDatosFiltrados()
         $condiciones = implode('', $condiciones);
     }
     $res = carga($tabla, $condiciones, $order);
-    filtros();
+       filtros();
 }
 
 
 function filtros()
 {
-    global $res, $tabla, $filtros, $order,  $id_tipos, $id_operadors, $id_estados, $id_tipo_numeros, $id_servidors, $id_entregas, $fecha_altas, $fecha_ultimo_cambios, $cliente_actuals, $numeros_desvioss, $observacioness, $id_motivo_bajas;
+    global $res, $tabla, $filtros,  $id_tipos, $id_operadors, $id_estados, $id_tipo_numeros, $id_servidors, $id_entregas, $fecha_altas, $fecha_ultimo_cambios, $cliente_actuals, $numeros_desvioss, $observacioness, $id_motivo_bajas;
 
     $numeros = $id_tipos = $id_operadors = $id_estados = $id_tipo_numeros = $id_servidors = $id_entregas = $fecha_altas = $fecha_ultimo_cambios = $cliente_actuals = $numeros_desvioss = $observacioness = $id_motivo_bajas = [];
     $filtros = array(
@@ -428,7 +519,9 @@ function filtros()
         }
         array_push($filtros, $pselects[$i]);
     }
-
+    if(isset($_POST['exporta'])) {
+        grabaExcel($res);
+    } else 
     pagina();
 }
 
@@ -1193,4 +1286,7 @@ function pagina()
                                                             </div>
                                                         <?php
                                                     };
+
+
+
                                                         ?>

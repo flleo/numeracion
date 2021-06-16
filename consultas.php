@@ -1,35 +1,37 @@
 <?php
+
 /**Consultas para ajax y los modales
  * Funciones para exportar los datos por excel
  */
+
+
 
 include 'mysql.php';
 //Label selects Admin
 $campos = array('numero', 'id_tipo', 'id_operador',  'id_estado',  'id_tipo_numero', 'id_servidor', 'id_entrega', 'fecha_alta', 'fecha_ultimo_cambio', 'cliente_actual', 'numeros_desvios', 'observaciones', 'id_motivo_baja');
 $camposa = array('numero', 'id_tipo', 'id_operador', 'id_estado', 'id_tipo_numero', 'id_servidor', 'id_entrega', 'fecha_alta', 'cliente_actual', 'numeros_desvios', 'observaciones');
-$camposab = array('numero', 'id_tipo', 'id_operador', 'id_estado', 'id_tipo_numero', 'id_servidor', 'id_entrega', 'fecha_alta', 'cliente_actual', 'numeros_desvios', 'observaciones','id_motivo_baja');
+$camposab = array('numero', 'id_tipo', 'id_operador', 'id_estado', 'id_tipo_numero', 'id_servidor', 'id_entrega', 'fecha_alta', 'cliente_actual', 'numeros_desvios', 'observaciones', 'id_motivo_baja');
 $camposu = array('numero', 'id_tipo', 'id_operador', 'id_estado', 'id_tipo_numero', 'id_servidor', 'id_entrega', 'fecha_alta', 'fecha_ultimo_cambio', 'cliente_actual', 'numeros_desvios', 'observaciones');
 $pcamposSS = array('Tipos', 'Operadores', 'Estados', 'Tipos&nbsp;de&nbsp;Números', 'Entregas', 'Servidores', 'Motivos&nbsp;de&nbsp;Baja');
 $tablas = ['tipo', 'operador', 'estado', 'tipo_numero', 'entrega', 'servidor', 'motivo_baja'];
 $pcamposS = array('Tipo', 'Operador', 'Estado', 'Tipo&nbsp;de&nbsp;Número', 'Entrega', 'Servidor', 'Motivo de Baja');
-$pcamposf = array('Numeros', 'Tipos', 'Operadores',  'Estados', 'Tipos&nbsp;numeros', 'Servidores', 'Entregas',  'Fechas&nbsp;altas', 'Fechas&nbsp;ult.&nbsp;cam.', 'Clientes&nbsp;actuales', 'Numeros&nbsp;de&nbsp;desvios', 'Observaciones', 'Motivos&nbsp;baja');
 $resSer = $mensaje = $tabla = $accion = $ps = '';
 $actualiza = false;
 $existe = false;
 session_start();
 
 
-    //Carga de las tablas en $admins y los selects/////////////////////////////////////////////////////
-    $admins = [];
-    foreach ($tablas as $t) {
-        $t == 'servidor' ? $c = 'host' : $c = $t;
-        $res = carga($t, '', "ORDER by $c");
-        $admins[$t] = array($res);
-    }
+//Carga de las tablas en $admins y los selects/////////////////////////////////////////////////////
+$admins = [];
+foreach ($tablas as $t) {
+    $t == 'servidor' ? $c = 'host' : $c = $t;
+    $res = carga($t, '', "ORDER by $c");
+    $admins[$t] = array($res);
+}
 
-    $id_estado_activado= $admins['estado'][0][array_search('Activado', array_column($admins['estado'][0], 1))]['id'];
-    $id_estado_desactivado = $admins['estado'][0][array_search('Desactivado', array_column($admins['estado'][0], 1))]['id'];
-    $id_estado_baja = $admins['estado'][0][array_search('Baja', array_column($admins['estado'][0], 1))]['id'];
+$id_estado_activado = $admins['estado'][0][array_search('Activado', array_column($admins['estado'][0], 1))]['id'];
+$id_estado_desactivado = $admins['estado'][0][array_search('Desactivado', array_column($admins['estado'][0], 1))]['id'];
+$id_estado_baja = $admins['estado'][0][array_search('Baja', array_column($admins['estado'][0], 1))]['id'];
 
 
 //Recogemos la accion de los ajax
@@ -53,7 +55,7 @@ if (isset($_GET['a'])) {
     if (isset($_GET['vdes'])) {
         $des = $_GET['vdes'];
     }
-    
+
     //Obtenemos el indice para asignar un nombre de cabecera
     while ($tab = current($tablas)) {
         if ($tab == $tabla) {
@@ -82,7 +84,7 @@ if (isset($_GET['a'])) {
         //Traemos de numeracion los registros con condicion
         $resn = cargaBindeo('numeracion', $condicion);
         //Traemos de numeracion_historial los registros con condicion
-        $resh = cargaBindeo('numeracion_historial', $condicion); 
+        $resh = cargaBindeo('numeracion_historial', $condicion);
         //Si existe en cualquera de las dos tablas crearemos un nuevo registro ,lo necesitamos para guardar el viejo en el historial       
         if (count($resn) > 0 || count($resh) > 0) {
             //Creamos nuevo registro del campo a actualizar
@@ -98,7 +100,7 @@ if (isset($_GET['a'])) {
                 //Para que actualize el array $admins de selects
                 $actualiza = true;
                 //Grabamos en historial cada uno de los registros de numeracion si existen, ya que van a ser cambiados
-                if (count($resn) > 0) {                    
+                if (count($resn) > 0) {
                     foreach ($resn as $r) {
                         $values = [];
                         for ($i = 0; $i < count($camposa); $i++)  array_push($values, $r[$camposa[$i]]);
@@ -108,44 +110,43 @@ if (isset($_GET['a'])) {
                     $query = " UPDATE $tabla SET activo=? WHERE id=?";
                     $values = [false, $id];
                     $res = update($query, $values);
-                     //Actualizamos en numeracion
+                    //Actualizamos en numeracion
                     $query = " UPDATE numeracion SET  id_$tabla='$id_ultimo' ,fecha_ultimo_cambio=DEFAULT  WHERE id_$tabla = '$id' ";
-                    $a = update($query,'');   
-                }           
+                    $a = update($query, '');
+                }
                 //Si no lo ha podido crear es que existia
             } else {
                 echo  $mensaje = "<div id='mensaje-admin' class='alert alert-danger'>Ya existe el registro: $valor, $ip, $des</div>";
             }
             //Si no lo contienen ni numeracion ni historial , actualizamos en su tabla
-        } else {      
+        } else {
             //Servidor puede tener combinaciones diferentes de host, descripcion, ip      
-            if($tabla == 'servidor'){
+            if ($tabla == 'servidor') {
                 $query = " UPDATE $tabla SET host=?, descripcion=? ,  ip=? WHERE id=?";
                 $values = [$host, $des, $ip, $id];
             } else {
                 $query = " UPDATE $tabla SET $tabla=? WHERE id=?";
-                $values = [$valor,$id];                
+                $values = [$valor, $id];
             }
             $res = update($query, $values);
             //Si no lo graba es que existe la combinacion
-            if(!$res)  echo  $mensaje = "<div id='mensaje-admin' class='alert alert-danger'>Hay un registro que contiene $valor, $ip, $des</div>";
+            if (!$res)  echo  $mensaje = "<div id='mensaje-admin' class='alert alert-danger'>Hay un registro que contiene $valor, $ip, $des</div>";
             else //Para que actualize el array $admins de selects
-            $actualiza = true;
+                $actualiza = true;
         }
-       
     }
 
     if ($accion == 'Act-Des') {
-        $res = carga('numeracion', "id_$tabla=$id",'');
-        if(sizeOf($res) > 0) $existe = true;
+        $res = carga('numeracion', "id_$tabla=$id", '');
+        if (sizeOf($res) > 0) $existe = true;
         /**lo busca en el filtro para ver si existe en numeracion */
         if ($existe) {
             echo  $mensaje = "<div id='mensaje-admin' class='alert alert-danger'>Hay un registro/s que contiene $valor $ip $des</div>";
         } else {
             //si no existe en numeracion vemos si en historial
-            $res = carga('numeracion_historial',"id_$tabla=$id",'');
-            if(sizeOf($res) > 0) {
-                $row = carga($tabla ,"id=$id",'');
+            $res = carga('numeracion_historial', "id_$tabla=$id", '');
+            if (sizeOf($res) > 0) {
+                $row = carga($tabla, "id=$id", '');
                 $activo = $row[0]['activo'];
                 if ($activo) {
                     $values = array(false, $id);
@@ -170,18 +171,17 @@ if (isset($_GET['a'])) {
     } else {
         cargaSels($tabla, $ps);
     }
-
-} 
+}
 
 //Carga seelct administracion
 function cargaSels($t, $ps)
 {
     global $mensaje, $admins, $actualiza;
     if ($actualiza) {
-        $res = carga($t,'',"ORDER BY $t ASC");
+        $res = carga($t, '', "ORDER BY $t ASC");
         $admins[$t] = array($res);
-      //  $_SESSION['adms'] = $admins;
-    } else 
+        //  $_SESSION['adms'] = $admins;
+    } else
         $res = $admins[$t][0];
     //array_push($ress,$res);
     if ($mensaje != '') {
@@ -227,7 +227,7 @@ function cargaSelsServidor()
     $host = $ip = $des = '';
     $idbin = $id;
     if ($actualiza) {
-        $res = carga('servidor','', 'ORDER BY host ASC');
+        $res = carga('servidor', '', 'ORDER BY host ASC');
         $admins['servidor'] = array($res);
     } else  $res = $admins['servidor'][0];
     if ($id != '') {
@@ -293,7 +293,7 @@ function cargaSelsServidorNE()
     $host = $ip = $des = '';
     $idbin = $id;
     if ($actualiza) {
-        $res = carga('servidor','','ORDER BY host ASC');
+        $res = carga('servidor', '', 'ORDER BY host ASC');
         $admins['servidor'] = array($res);
     } else  $res =  $admins['servidor'][0];
     if ($id != '') {
@@ -317,19 +317,19 @@ function cargaSelsServidorNE()
         echo '    <label for="sel-id_servidor-ne">Servidor</label>';
     }    ?>
     <select id="sel-id_servidor-ne" class="form-select" name="id_servidor" tabla="servidor">
-        <?php foreach ($res as $r) {
-            $id = $r['id'];
-            $host = $r['host'];
-            $ac = $r['activo'];
-            if($ac){
-                if ($id == $idbin) {
-                    echo "<option  value='$id' selected>$host</option>";
-                } else {
-                    echo "<option  value='$id' >$host</option>";
-                }
-            }           
+    <?php foreach ($res as $r) {
+        $id = $r['id'];
+        $host = $r['host'];
+        $ac = $r['activo'];
+        if ($ac) {
+            if ($id == $idbin) {
+                echo "<option  value='$id' selected>$host</option>";
+            } else {
+                echo "<option  value='$id' >$host</option>";
+            }
         }
-        echo '
+    }
+    echo '
                     </select> 
                     </div>  
                     <div class="form-group ">
@@ -343,95 +343,22 @@ function cargaSelsServidorNE()
                 </div>
             </div>';
 
-        $_GET = '';
+    $_GET = '';
+}
+
+//Graba en la tabla dada
+function grabaT($camposa, $values, $tabla)
+{
+    $bcampos = [];
+    for ($i = 0; $i < sizeOf($camposa); $i++) {
+        array_push($bcampos, '?');
     }
-
-    //Graba en la tabla dada
-    function grabaT($camposa, $values, $tabla)
-    {
-        $bcampos = [];
-        for ($i = 0; $i < sizeOf($camposa); $i++) {
-            array_push($bcampos, '?');
-        }
-        $camposs = implode(", ", $camposa);    //Nos da un string
-        $bcamposs = implode(" , ", $bcampos);
-        $query = " INSERT INTO $tabla ($camposs) VALUES ($bcamposs) ";
-        return  insert($query, $values);
-    }
-
-
-
-    ////////////////////////////////////Exporta Excel/////////////////////////////////////////////////////////////////////////////////////
-
-if (isset($_POST['exporta'])) {
-$titulo = $_POST['titulo'];
-if ($titulo == 'numeracion') {
-$size = sizeOf($pcamposf) - 1;
-$res = carga($titulo, '', 'ORDER BY  numero asc, fecha_ultimo_cambio desc');
-} else {
-$size = sizeOf($pcamposf);
-$res = carga($titulo, '', 'ORDER BY fecha_ultimo_cambio ');
-}
-$date = new DateTime('NOW', new DateTimeZone('Europe/Dublin'));
-$d = $date->format('d-m-Y H:m:s');
-$file = $titulo . '-' . $d . '.xlsx';
-
-header("Pragma: public");
-header("Expires: 0");
-header("Content-type: application/x-msdownload");
-header("Content-Disposition: attachment; filename=$file");
-header("Pragma: no-cache");
-header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-
-?>
-
-
-<table class="table">
-    <thead>
-        <tr>
-            <?php for ($i = 0; $i < $size; $i++) {
-echo "<th>$pcamposf[$i]</th>";
-}
-?> </tr>
-    </thead>
-    <tbody>
-        <?php
-foreach ($res as $key) {
-?> <tr>
-            <?php
-echo "<td >" . $key['numero'] . "</td>";
-$ti = $admins['tipo'][0][array_search($key['id_tipo'], array_column($admins['tipo'][0], 0))]['tipo'];
-echo "<td>$ti</td>";
-$op = $admins['operador'][0][array_search($key['id_operador'], array_column($admins['operador'][0], 0))]['operador'];
-echo "<td>$op</td>";
-$es = $admins['estado'][0][array_search($key['id_estado'], array_column($admins['estado'][0], 0))]['estado'];
-echo "<td>$es</td>";
-$tn = $admins['tipo_numero'][0][array_search($key['id_tipo_numero'], array_column($admins['tipo_numero'][0], 0))]['tipo_numero'];
-echo "<td>$tn</td>";
-$se = $admins['servidor'][0][array_search($key['id_servidor'], array_column($admins['servidor'][0], 0))]['host'];
-echo "<td>$se</td>";
-$en = $admins['entrega'][0][array_search($key['id_entrega'], array_column($admins['entrega'][0], 0))]['entrega'];
-echo "<td>$en</td>";
-echo "<td>" . $key['fecha_alta'] . "</td>";
-echo "<td>" . $key['fecha_ultimo_cambio'] . "</td>";
-echo "<td>" . $key['cliente_actual'] . "</td>";
-echo "<td>" . $key['numeros_desvios'] . "</td>";
-echo "<td>" . $key['observaciones'] . "</td>";
-if ($titulo == 'numeracion_historial') {
-if (isset($key['id_motivo_baja'])) {
-$mb = $admins['motivo_baja'][0][array_search($key['id_motivo_baja'], array_column($admins['motivo_baja'][0], 0))]['motivo_baja'];
-echo "<td>$mb</td>";
-} else {
-echo "<td>null</td>";
-}
-}
-?> </tr>
-        <?php   }    ?>
-    </tbody>
-</table>
-<?php
+    $camposs = implode(", ", $camposa);    //Nos da un string
+    $bcamposs = implode(" , ", $bcampos);
+    $query = " INSERT INTO $tabla ($camposs) VALUES ($bcamposs) ";
+    return  insert($query, $values);
 }
 
 
 
-?>
+    ?>
