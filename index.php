@@ -453,7 +453,9 @@ function prepara($i)
     }
     //Carga solo el numero para historial
     if (isset($_POST['historial_con']) || isset($_POST['historial'])) {
+        if(isset($_POST['numero']))
         $valor = $_POST['numero'];
+        else $valor = $_POST['numeros'];
         $condicion = "numero in ($valor) ";
         $tam = 1;
         array_push($condiciones, $condicion);
