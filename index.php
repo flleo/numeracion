@@ -2,6 +2,7 @@
 
 include 'consultas.php';
 require 'vendor/autoload.php';
+
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -96,7 +97,7 @@ if (isset($_POST['actualiza'])) {
 
 //Actualiza acciones conjuntas
 if (isset($_POST['actualiza_con'])) {
-    if($_POST['id'] != '') {
+    if ($_POST['id'] != '') {
         $ids = explode(',', $_POST['id']);
         $numeros = explode(',', $_POST['numero']);
         $id_motivo_baja = null;
@@ -162,29 +163,29 @@ if (isset($_POST['reactivar'])) {
 
 //Actualiza reasignaciones
 
-    foreach ($tablas as $t) {
-        if (isset($_POST["$t-ck"])) {
-            $ck = $_POST["$t-ck"];
-            //Si esta checkeado
-            if ($ck) {
-                if (isset($_POST["sel-ori-$t"]) && isset($_POST["sel-rea-adm-$t"])) {
-                    $id_ori = $_POST["sel-ori-$t"];
-                    $id_rea = $_POST["sel-rea-adm-$t"];
-                    $nums = recuperaYGrabaR($t);
-                    if (count($nums) > 0) {
-                        $query = "UPDATE numeracion set id_$t=?, fecha_ultimo_cambio=DEFAULT where id_$t=?";
-                        $values = [$id_rea, $id_ori];
-                        $ok = update($query, $values);
-                        if ($ok) {
-                            $message = "<div class='alert alert-success'>El número/s " . implode(',', $nums)  . ", fue actualizado con éxito</div>";
-                        }
+foreach ($tablas as $t) {
+    if (isset($_POST["$t-ck"])) {
+        $ck = $_POST["$t-ck"];
+        //Si esta checkeado
+        if ($ck) {
+            if (isset($_POST["sel-ori-$t"]) && isset($_POST["sel-rea-adm-$t"])) {
+                $id_ori = $_POST["sel-ori-$t"];
+                $id_rea = $_POST["sel-rea-adm-$t"];
+                $nums = recuperaYGrabaR($t);
+                if (count($nums) > 0) {
+                    $query = "UPDATE numeracion set id_$t=?, fecha_ultimo_cambio=DEFAULT where id_$t=?";
+                    $values = [$id_rea, $id_ori];
+                    $ok = update($query, $values);
+                    if ($ok) {
+                        $message = "<div class='alert alert-success'>El número/s " . implode(',', $nums)  . ", fue actualizado con éxito</div>";
                     }
                 }
             }
-            $tabla = 'numeracion';
-            bindeaFiltros();
         }
+        $tabla = 'numeracion';
+        bindeaFiltros();
     }
+}
 
 
 
@@ -330,16 +331,16 @@ function fechaDesAsc()
 
 function grabaExcel($res)
 {
-    global  $pcampose,$filename, $titulo;
+    global  $pcampose, $filename, $titulo;
 
     $filename = 'exports/file.xlsx';
     $titulo = $_POST['titulo'];
     if ($titulo == 'numeracion') {
         $size = sizeOf($pcampose) - 1;
-      //  $res = carga($titulo, '', 'ORDER BY  numero asc, fecha_ultimo_cambio desc');
+        //  $res = carga($titulo, '', 'ORDER BY  numero asc, fecha_ultimo_cambio desc');
     } else {
         $size = sizeOf($pcampose);
-     //   $res = carga($titulo, '', 'ORDER BY fecha_ultimo_cambio ');
+        //   $res = carga($titulo, '', 'ORDER BY fecha_ultimo_cambio ');
     }
 
     $spread = new Spreadsheet();
@@ -357,7 +358,7 @@ function grabaExcel($res)
         $row++;
         for ($j = 0; $j < $size; $j++) {
             if ($re[$j] != null) {
-                $sheet->setCellValue($col[$j] . $row, $re[$j+1]);
+                $sheet->setCellValue($col[$j] . $row, $re[$j + 1]);
             }
         }
     }
@@ -418,7 +419,7 @@ function bindeaFiltros()
     global $camposf, $tabla, $tam,  $condiciones, $ncampos;
     $ncampos = 0;
     $condiciones = [];
-   
+
 
     //Quitamos el ultuimop filtro motivo_baja para numeracion
     if ($tabla == 'numeracion') {
@@ -483,7 +484,7 @@ function cargaDatosFiltrados()
         $condiciones = implode('', $condiciones);
     }
     $res = carga($tabla, $condiciones, $order);
-       filtros();
+    filtros();
 }
 
 
@@ -519,10 +520,10 @@ function filtros()
         }
         array_push($filtros, $pselects[$i]);
     }
-    if(isset($_POST['exporta'])) {
+    if (isset($_POST['exporta'])) {
         grabaExcel($res);
-    } else 
-    pagina();
+    } else
+        pagina();
 }
 
 /*Hasta el listado //Pagina inicio*/
@@ -587,20 +588,7 @@ function pagina()
                     max-width: 90% !important;
                 }
             }
-
-            tr {
-                height: 65px;
-            }
-
-            [class$=filter] {
-                width: 145px;
-            }
-
-            input,
-            select {
-                height: 35px;
-            }
-
+          
         </style>
     </head>
 
@@ -620,7 +608,7 @@ function pagina()
             <h3 class="text-center">Listín Telefónico: <span id="titulo"><?php echo $titulo; ?></span></h3>
             <div class="   ">
                 <!--Pintamos los filtros-->
-                <form action="index.php" method="POST" id="movimientos">
+                <form action="" method="POST" id="movimientos">
                     <div id="filtros" class="d-flex flex-wrap">
                         <?php
                         for ($i = 0; $i < sizeof($filtros); $i++) {
@@ -715,31 +703,45 @@ function pagina()
                                         $po = $npaginas;
                                     }
                                 }
-                                echo '                        <li class="page-item "> 
-                         <input name="tabla" value="' . $tabla . '" hidden>   
-       <button type="submit"  class="page-link " name="page" value="' . $pa . '" aria-label="Previous"> ';
-                                echo '                                       <span aria-hidden="true">&laquo;</span>
-                         </button>
-                     </li>';
+                                echo'<li class="page-item ">
+                                        <button type="submit"  class="page-link " name="page" value="1" aria-label="first"> ';
+                                            echo '<span aria-hidden="true">&laquo;&laquo;</span>
+                                        </button>
+                                    </li>';
+                                echo'<li class="page-item ">
+                                        <button type="submit"  class="page-link " name="page" value="' . $pa . '" aria-label="previous"> ';
+                                                echo '<span aria-hidden="true">&laquo;</span>
+                                        </button>
+                                    </li>';                             
                                 $pag = 1;
-                                while ($pag <= $npaginas) {
+                                if($pagg > 10) $pag = $pagg - 9;
+                                $np = 0;
+                                while( $pag <= $npaginas && $np < 10){  
+                                    $np++;
                                     $p = $pag;
                                     $pag++;
-                                    echo '                      <li class="page-item">';
+                                    echo '<li class="page-item">';
                                     if ($pagg == $p || ($pagg == 0 && $p == 1)) {
-                                        echo '<button id="page-selected" type="submit"  class="page-link" name="page" value="' . $p . '" aria-label="Previous">' . $p . '</button>';
+                                        echo '<button id="page-selected" type="submit"  class="page-link page-number" name="page" value="' . $p . '" aria-label="actual">'.$p.'</button>';
                                     } else {
-                                        echo '<button type="submit"  class="page-link" name="page" value="' . $p . '" aria-label="Previous">' . $p . '</button>';
+                                        echo '<button type="submit"  class="page-link page-number" name="page" value="' . $p . '" aria-label="actual">' . $p . '</button>';
                                     }
-                                    echo '                            </li>';
+                                    echo '</li>';
                                 }
+                               
                                 echo '
                      <li class="page-item">
-      <button type="submit"  class="page-link"  name="page" value="' . $po . '" aria-label="Previous">                        
+      <button id="btn-next" type="submit"  class="page-link"  name="page" value="' . $po . '" aria-label="next">                        
                        <span aria-hidden="true">&raquo;</span>
                          </button>
-                     </li>
-             </ul>                       
+                     </li>';
+                     echo '
+                     <li class="page-item">
+      <button type="submit"  class="page-link"  name="page" value="' . $npaginas . '" aria-label="last">                        
+                       <span aria-hidden="true">&raquo;&raquo;</span>
+                         </button>
+                     </li>';
+        echo'     </ul>                       
      </nav>  ';
                                 //echo "<input hidden name='numeros' value=$value>";
                                 //Opciones conjuntas: reasignar,editar,historial,baja///////////////
@@ -747,7 +749,7 @@ function pagina()
                                 ?>
                                 <?php echo " 
                 <input  type='button' class='btn btn-info btn-reasignar-con  mb-1 mx-2' data-toggle='modal' title='Reasigna todos los registros de un tipo, hacia otro tipo' value='Reasignar' style='height:35px;'>                 
-                <input  type='button' class='btn btn-primary btn-editar-con  mb-1' data-toggle='modal' value='Editar' style='height:35px;'>               
+                <input  type='button' class='btn btn-primary btn-editar-con  mb-1' data-toggle='modal-en' value='Editar' style='height:35px;'>               
                 <input id='btn-historial-con' type='submit'  name='historial_con' class='btn btn-secondary text-light btn-historial-con mx-2' value='Historial' style='height:35px;'>";
                                     echo   '<input name="btn_baja_con" type="submit" class="btn btn-danger btn-baja  " data-toggle="modal"   value="Baja" >';
                                 }
@@ -841,7 +843,7 @@ function pagina()
                                     if ($re > $ninicio && $re <= $nfin) {
                                         echo "<tr>";   //Registro/////////////////////
                                         if ($tabla == 'numeracion')
-                                            echo "  <td id='check$re' re=$re><input  type='checkbox'></td>";
+                                            echo "  <td id='check$re'   re=$re ><input   type='checkbox'></td>";
                                         echo "  <td hidden id='id$re'>" . $key['id'] . "</td>
                         <td  id='numero$re'>" . $key['numero'] . "</td>";
                                         //Campos nombre de las tablas segun id
@@ -900,7 +902,7 @@ function pagina()
                                   <td >
                                     <div class='d-flex flex-nowrap justify-content-center'>
                                         <input re='$re'  type='button' class='btn btn-info btn_info' data-toggle='modal'    value='+'>
-                                        <input re='$re' type='button' class='btn btn-primary btn-editar mx-2' data-toggle='modal' value='E'>
+                                        <input re='$re' type='button' class='btn btn-primary btn-editar mx-2' data-toggle='modal-en' value='E'>
                                         <form method='post' >
                                             <input hidden  name='numero' value=" . $key['numero'] . ">
                                             <input id='historial$re' type='submit'  name='historial' class='btn btn-secondary text-light btn-historial  ' value='H'>
@@ -929,7 +931,7 @@ function pagina()
                             ///////////////////////////////////////modales////////////////////////////////////////////////////////////////////
 
                             //Para que al exposrtar no incluya los modales
-                            if (!isset($_POST['exporta']) ) {
+                            if (!isset($_POST['exporta'])) {
                                 ?>
                                 <!-- Modal Reasignar-->
                                 <div class="modal fade" id="modal-reasignar" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
@@ -947,22 +949,23 @@ function pagina()
                                                         for ($i = 0; $i < sizeOf($pcamposS) - 1; $i++) {
                                                             echo "<div class='d-flex '>
                     <input  type='checkbox' name='$tablas[$i]-ck' style='margin-right:2px;'>
-                    <label >$pcamposS[$i]</label>                      
+                    <label class='m-1 '>$pcamposS[$i]</label>                      
                 </div>";
                                                             echo "<select class='form-select' name='sel-ori-$tablas[$i]' >";
-                                                           /* foreach ($filtros[$i + 1] as $f) {
+                                                            /* foreach ($filtros[$i + 1] as $f) {
                                                                   echo "<option value=$f>$v<option>";
                                                             }*/
                                                             echo "</select>";
                                                         }
                                                         ?>
                                                     </div>
-                                                    <button id="btn-reasignar-modal" class="btn border-secondary"  >Reasignar</button>
+                                                    <button id="btn-reasignar-modal" class="btn border-secondary">Reasignar</button>
                                                     <div class="w-25 form-group ">
-                                                        <h6>Reasignado</h6>
+                                                        <h6 class="mb-3">Reasignado</h6>
                                                         <?php
                                                         for ($i = 0; $i < sizeOf($pcamposS) - 1; $i++) {
-                                                            echo "<div class='mt-2'";
+                                                            if($i < 2)  echo "<div class='mt-2 '";
+                                                            else  echo "<div class='mt- mb-2'";
                                                             echo "<label >$pcamposS[$i]</label>";
                                                             echo "<select class='form-select mt-1' name='sel-rea-adm-$tablas[$i]'>";
                                                             foreach ($admins[$tablas[$i]][0] as $f) {
@@ -1068,7 +1071,7 @@ function pagina()
                                                         </div>
 
                                                         <!-- Modal Editar/Nuevo-->
-                                                        <div class="modal fade" id="modal" tabindex="-1" role="dialog">
+                                                        <div class="modal fade" id="modal-en" tabindex="-1" role="dialog">
                                                             <div class="modal-dialog moodal-dialog-centered" role="document">
                                                                 <div class="modal-content p-0 modalcss">
                                                                     <div class="modal-header bg-info ">
@@ -1162,7 +1165,7 @@ function pagina()
                                                                                         ?>
                                                                                     </select>
                                                                                 </div>
-                                                                                <div class="form-group w-100 mt-3">
+                                                                                <div class="form-group w-100 mt-1">
                                                                                     <label for="numero">Cliente&nbsp;actual</label>
                                                                                     <input type="text" class="form-control mt-2" name="cliente_actual" id="cliente_actual-ne">
                                                                                 </div>

@@ -1,4 +1,5 @@
 <?php
+
 //DATA LIST
 echo "<datalist id=$camposf[$i]  >";
                                 echo "<option value=''></option>";
@@ -64,6 +65,23 @@ $res = carga("SELECT * FROM TIPO ORDER BY 'TIPO'");
 }
 </style>
 <script>
+//event.preventDefault()////////////antes de un ajax///////////////////////
+if (tabla == 'servidor') {   
+                event.preventDefault();             
+                bindeaRecuperadosServidor('');
+            } else {                
+                html = $(this).children(":selected").html();
+                bindeaRecuperadosInput();
+            }
+        });
+    }
+
+    function bindeaRecuperadosServidor(a) {
+        url = "consultas.php?a=" + a + "&id=" + id + "&t=" + tabla;
+        $.ajax({
+//foreach jq//////////////////////////////////////
+ $('#select-' + tabla + '-admin > option').each(function () {
+////////////////////////////////////////////////////     
   /* ops: array de options, de la tabla padre
      * id:  id de la tabla padre
      * return: valor del campo de la tabla padre

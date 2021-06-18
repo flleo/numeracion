@@ -1,5 +1,3 @@
-
-
 body {
     background-color: white
 }
@@ -64,4 +62,48 @@ small {
 
 div.w-25:nth-child(3) {
     margin-right: 80px;
+}
+
+[class$=filter] {
+    width: 145px;
+}
+
+input,
+select {
+    height: 35px;
+}
+
+/*id descripcion editar-con*/
+[class$=ip-admin-ck] {
+    margin-top: 2px !important;    
+    margin-bottom: 2px !important;   
+}
+
+[class$=ip-admin-ck]>input {
+    margin-top: 1px !important;  
+    margin-bottom: 4px !important;   
+}
+
+[class$=ip-admin] {
+    margin-top: -2px !important;    
+}
+
+#ip-admin,
+#descripcion-admin {
+    margin-top: -5px;
+    ;
+}
+
+/**/
+.page-link {
+    padding: .3rem .75rem;
+}
+
+td>[type=checkbox],
+th>[type=checkbox] {
+    margin-top: -3px !important;
+}
+
+tr {
+    height: 65px;
 }

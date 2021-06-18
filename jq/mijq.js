@@ -1,5 +1,5 @@
 $(document).ready(function () {
-
+    
     //Administracion///////////////////////////////////////////////////////////////////
     var v = vip = vhost = vdes = vsf = tabla = btn = btnVal = id = op = sel = selRutaIp = selRutaDes =
         accion = existe = ip = des = a = '';
@@ -8,25 +8,24 @@ $(document).ready(function () {
     $('form').attr('autocomplete', 'off');
     $('input').attr('autocomplete', 'off');
 
-
-    //bindea los selects de admin con su input
-    function bindeaRecuperadosOptionAdmin() {
-        $('select[id$=admin]').change(function () {
-            tabla = $(this).attr('tabla');
-            id = $(this).val();
-            html = $(this).children(":selected").html();
-            if (tabla == 'servidor') {
-                bindeaRecuperadosServidor('');
-            } else {
-                bindeaRecuperadosInput();
-            }
-        });
-    }
-
     $('#sel-id_servidor-ne').focusin(function () {
         sel_id_servidor_ne_checked = true
     })
 
+    //bindea los selects de admin con su input
+    function bindeaRecuperadosOptionAdmin() {       
+        $('select[id$=admin]').change(function (event) {      
+            tabla = $(this).attr('tabla');
+            id = $(this).val();
+            if (tabla == 'servidor') {   
+                event.preventDefault();             
+                bindeaRecuperadosServidor('');
+            } else {                
+                html = $(this).children(":selected").html();
+                bindeaRecuperadosInput();
+            }
+        });
+    }
 
     function bindeaRecuperadosServidor(a) {
         url = "consultas.php?a=" + a + "&id=" + id + "&t=" + tabla;
@@ -102,8 +101,7 @@ $(document).ready(function () {
             },
             success: function (data) {
                 $('#response-' + tabla).html(data);
-                response();
-                
+                response();                
             },
             error: function () {
                 response();
@@ -124,8 +122,9 @@ $(document).ready(function () {
         // $('#modal-error-borrar-admin').show();
         $('#modal-error-borrar-admin').modal('show');
         //ok borrar
-        $('#btn-borrar-dato-final').click(function () {
+        $('#btn-borrar-dato-final').click(function (e) {
             $('#modal-error-borrar-admin').modal('hide');
+            e.preventDefault();
             envia();
            
         })
@@ -145,7 +144,6 @@ $(document).ready(function () {
      * return: enviar a Anadir, actualizar o borrar campos
      */
     function siExiste() {
-
         if (v != '' && v != undefined) {
             vacio = existe = false;
             $('#select-' + tabla + '-admin > option').each(function () {
@@ -202,7 +200,7 @@ $(document).ready(function () {
 
     ////////Comienzo de la ejecucion de acciones Administrador/////////////////////////////////
 
-    $("[class*=btn-action-admin]").click(function () {
+    $("[class*=btn-action-admin]").click(function (e) {
         btn = $(this)
         btnVal = $(this).val();
         c = $(btn).attr('class')
@@ -214,6 +212,7 @@ $(document).ready(function () {
             vip = $('#ip-admin').val();
             vdes = $('#descripcion-admin').val();
         }
+        e.preventDefault();
         btnAction();
 
     });
@@ -247,12 +246,12 @@ $(document).ready(function () {
     sel_id_servidor_ne_checked = false
 
     //cambia valor del select servidor en nuevo/editar
-    function bindeaRecuperadosServidorNEOption(a) {
-        $('#sel-id_servidor-ne').change(function () {
+    function bindeaRecuperadosServidorNEOption(a) {       
+        $('#sel-id_servidor-ne').change(function (event) {
             id = $(this).val();
             html = $(this).children(":selected").html();
             tabla = 'servidor'
-
+            event.preventDefault();
             bindeaRecuperadosServidor(a);
 
         });
@@ -275,7 +274,7 @@ $(document).ready(function () {
         $('#btn-modal-submit').attr('name', 'graba');
         $('#m-titulo').html('Nuevo registro');
         $('label+[type=checkbox]').hide();
-        $('#modal').modal('show');
+        $('#modal-en').modal('show');
         modalSinfondo()
     });
 
@@ -331,8 +330,8 @@ $(document).ready(function () {
         });
         eliminaVacios('[id$=ne]')
         eliminaVacios('[id$=ne]')
-        //cambia valor del select servidor en nuevo/editar
-        bindeaRecuperadosServidorNEOption('ne');
+          //cambia valor del select servidor en nuevo/editar
+          bindeaRecuperadosServidorNEOption('ne');
         //Asignamos valor select
         campos.forEach(function (c) {
             v = $('#' + c + re).attr('value');
@@ -340,6 +339,7 @@ $(document).ready(function () {
             $('#sel-' + c + '-ne').change();
             $('#sel-' + c + '-ne').prop('disabled', false)
         });
+     
         $('#btn-modal-submit').val('Actualizar');
         $('#btn-modal-submit').attr('name', 'actualiza');
         $('#m-titulo').html('Actualizar registro');
@@ -347,7 +347,7 @@ $(document).ready(function () {
         $('#ip-admin').prop('disabled', true);
         $('#descripcion-admin').prop('disabled', true);
         $('label+[type=checkbox]').hide();
-        $('#modal').modal('show');
+        $('#modal-en').modal('show');
         modalSinfondo()
     });
 
@@ -417,10 +417,26 @@ $(document).ready(function () {
       
     })
 
+      //checkbox del listado
+      ids = []; ns = []; cas = [];
+      $('td>[type=checkbox]').click(function () {
+          re = $(this).parent().attr('re')
+          id = $('#id' + re).html()
+          n = $('#numero' + re).html()
+          ca = $('#cliente_actual' + re).html()
+          if ($(this)[0].checked === true) {
+              ids.push(id)
+              ns.push(n)
+              cas.push(ca)
+          } else {
+              saca(ids, id)
+              saca(ns, n)
+              saca(cas, ca)
+          }
+      })
+
     $('[name=allcheck]').click(function () {
-        if ($(this).prop('checked') === true) {
-            $('td>[type=checkbox]').prop('checked', true);
-        } else $('td>[type=checkbox]').prop('checked', false);
+        $('td>[type=checkbox]').click();
     })
 
     $('#btn-historial-con').focusin(function () {
@@ -429,6 +445,7 @@ $(document).ready(function () {
     })
 
     $('.btn-editar-con').click(function () {
+        $('[name$=-ck]').prop('checked',false)
         eliminaVacios('[id$=ne]')
         eliminaVacios('[id$=ne]')
         a = 'ne-ck'
@@ -444,7 +461,7 @@ $(document).ready(function () {
         $('#m-titulo').html('Actualizar registro');
         $('[name=numero]').prop('readonly', true);
         $('[id$=-ne]').prop('disabled', true);
-        $('#modal').modal('show');
+        $('#modal-en').modal('show');
         modalSinfondo()
     });
 
@@ -484,23 +501,7 @@ $(document).ready(function () {
         }
     }
 
-    //checkbox del listado
-    ids = []; ns = []; cas = [];
-    $('td>[type=checkbox]').click(function () {
-        re = $(this).parent().attr('re')
-        id = $('#id' + re).html()
-        n = $('#numero' + re).html()
-        ca = $('#cliente_actual' + re).html()
-        if ($(this)[0].checked === true) {
-            ids.push(id)
-            ns.push(n)
-            cas.push(ca)
-        } else {
-            saca(ids, id)
-            saca(ns, n)
-            saca(cas, ca)
-        }
-    })
+  
 
 
     //bindeaRecuperadosmos hacia el modal info////////////////////////////////////                
@@ -527,13 +528,6 @@ $(document).ready(function () {
         $('#modal-info').modal('show');
         modalSinfondo()
     });
-
-    //Selects de los filtros
-    var selsfil = ['#select-filtro-id_tipos', '#select-filtro-id_operadors',
-        '#select-filtro-id_estados', '#select-filtro-id_tipo_numeros',
-        '#select-filtro-id_servidors', '#select-filtro-id_entregas',
-        '#select-filtro-id_motivo_bajas'
-    ];
 
     //ides de la tabla listado 
     var campos = ['id_tipo', 'id_operador', 'id_estado', 'id_tipo_numero', 'id_servidor',

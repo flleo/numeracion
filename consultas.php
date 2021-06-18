@@ -272,11 +272,11 @@ function cargaSelsServidor()
 <div class="row d-flex px-3 " style="height:60px;">
     <div class="form-group w-50 mr-4" style="height:60px;">
         <label class="control-label">Ip</label>
-        <input type="text" class="form-control  w-100" id="ip-admin" style="width:150px;" value="' . $ip . '" >
+        <input type="text" class="form-control mt-1 w-100" id="ip-admin" style="width:150px;" value="' . $ip . '" >
     </div>
     <div class="form-group w-50 " style="height:60px;">
         <label class="control-label">Descripción</label>
-        <input type="text" class="form-control  w-100" id="descripcion-admin" style="width:150px;" value="' . $des . '" >
+        <input type="text" class="form-control mt-1 w-100" id="descripcion-admin" style="width:150px;" value="' . $des . '" >
     </div>
 </div>';
 
@@ -330,16 +330,23 @@ function cargaSelsServidorNE()
         }
     }
     echo '
-                    </select> 
-                    </div>  
-                    <div class="form-group ">
-                    <label class="col col-form-label col-form-label-sm">Ip</label>
-                        <input id="ip-admin" type="text" class="form-control mt-1 w-100"    value="' . $ip . '" disabled>
+                    </select> </div>';
+                    if ($accion == 'ne-ck') {
+                        echo'<div class="form-group ip-admin-ck">';
+                    }else {
+                        echo'<div class="form-group ip-admin">';
+                    }                 
+                echo'<label for="ip-admin" class="col col-form-label col-form-label-sm">Ip</label>';                   
+                echo'<input id="ip-admin" type="text" class="form-control w-100"    value="' . $ip . '" disabled>
                     </div>
-                </div>
-                <div class="form-group w-100 mt-2" style="height:60px;">
-                     <label class="col col-form-label col-form-label-sm">Descripción</label>
-                    <input id="descripcion-admin" type="text" class="form-control mt-1"  value="' . $des . '" disabled>
+                </div>';
+                if ($accion == 'ne-ck') {
+                    echo'<div class="form-group w-100   ip-admin-ck" style="height:60px;">';
+                }else {
+                    echo'<div class="form-group w-100   ip-admin" style="height:60px;">';
+                }               
+            echo'   <label class="col col-form-label col-form-label-sm">Descripción</label>
+                    <input id="descripcion-admin" type="text" class="form-control "  value="' . $des . '" disabled>
                 </div>
             </div>';
 

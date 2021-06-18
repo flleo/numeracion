@@ -5,25 +5,25 @@ $(document).ready(function () {
   var v = vip = vhost = vdes = vsf = tabla = btn = btnVal = id = op = sel = selRutaIp = selRutaDes = accion = existe = ip = des = a = '';
   $('[class^=modal').modal('hide');
   $('form').attr('autocomplete', 'off');
-  $('input').attr('autocomplete', 'off'); //bindea los selects de admin con su input
+  $('input').attr('autocomplete', 'off');
+  $('#sel-id_servidor-ne').focusin(function () {
+    sel_id_servidor_ne_checked = true;
+  }); //bindea los selects de admin con su input
 
   function bindeaRecuperadosOptionAdmin() {
-    $('select[id$=admin]').change(function () {
+    $('select[id$=admin]').change(function (event) {
       tabla = $(this).attr('tabla');
       id = $(this).val();
-      html = $(this).children(":selected").html();
 
       if (tabla == 'servidor') {
+        event.preventDefault();
         bindeaRecuperadosServidor('');
       } else {
+        html = $(this).children(":selected").html();
         bindeaRecuperadosInput();
       }
     });
   }
-
-  $('#sel-id_servidor-ne').focusin(function () {
-    sel_id_servidor_ne_checked = true;
-  });
 
   function bindeaRecuperadosServidor(a) {
     url = "consultas.php?a=" + a + "&id=" + id + "&t=" + tabla;
@@ -116,8 +116,9 @@ $(document).ready(function () {
 
     $('#modal-error-borrar-admin').modal('show'); //ok borrar
 
-    $('#btn-borrar-dato-final').click(function () {
+    $('#btn-borrar-dato-final').click(function (e) {
       $('#modal-error-borrar-admin').modal('hide');
+      e.preventDefault();
       envia();
     });
   }
@@ -195,7 +196,7 @@ $(document).ready(function () {
   } ////////Comienzo de la ejecucion de acciones Administrador/////////////////////////////////
 
 
-  $("[class*=btn-action-admin]").click(function () {
+  $("[class*=btn-action-admin]").click(function (e) {
     btn = $(this);
     btnVal = $(this).val();
     c = $(btn).attr('class');
@@ -209,6 +210,7 @@ $(document).ready(function () {
       vdes = $('#descripcion-admin').val();
     }
 
+    e.preventDefault();
     btnAction();
   });
   tablas = ['tipo', 'operador', 'estado', 'tipo_numero', 'entrega', 'servidor', 'motivo_baja']; //Desbloquea los botones Actualizar y Borrar de admin
@@ -238,10 +240,11 @@ $(document).ready(function () {
   sel_id_servidor_ne_checked = false; //cambia valor del select servidor en nuevo/editar
 
   function bindeaRecuperadosServidorNEOption(a) {
-    $('#sel-id_servidor-ne').change(function () {
+    $('#sel-id_servidor-ne').change(function (event) {
       id = $(this).val();
       html = $(this).children(":selected").html();
       tabla = 'servidor';
+      event.preventDefault();
       bindeaRecuperadosServidor(a);
     });
   } //Nuevo registro///////////////////////////////////////////////
@@ -263,7 +266,7 @@ $(document).ready(function () {
     $('#btn-modal-submit').attr('name', 'graba');
     $('#m-titulo').html('Nuevo registro');
     $('label+[type=checkbox]').hide();
-    $('#modal').modal('show');
+    $('#modal-en').modal('show');
     modalSinfondo();
   }); //Botones de las rows del listado//////////////////////////////////////////
   //Baja
@@ -326,7 +329,7 @@ $(document).ready(function () {
     $('#ip-admin').prop('disabled', true);
     $('#descripcion-admin').prop('disabled', true);
     $('label+[type=checkbox]').hide();
-    $('#modal').modal('show');
+    $('#modal-en').modal('show');
     modalSinfondo();
   }); //Acciones conjuntas///////////////////////////////////////////////////////////////////////
 
@@ -395,17 +398,36 @@ $(document).ready(function () {
     $('[name^=sel-ori-').prop('disabled', true);
     $('#modal-reasignar').modal('show');
     modalSinfondo();
+  }); //checkbox del listado
+
+  ids = [];
+  ns = [];
+  cas = [];
+  $('td>[type=checkbox]').click(function () {
+    re = $(this).parent().attr('re');
+    id = $('#id' + re).html();
+    n = $('#numero' + re).html();
+    ca = $('#cliente_actual' + re).html();
+
+    if ($(this)[0].checked === true) {
+      ids.push(id);
+      ns.push(n);
+      cas.push(ca);
+    } else {
+      saca(ids, id);
+      saca(ns, n);
+      saca(cas, ca);
+    }
   });
   $('[name=allcheck]').click(function () {
-    if ($(this).prop('checked') === true) {
-      $('td>[type=checkbox]').prop('checked', true);
-    } else $('td>[type=checkbox]').prop('checked', false);
+    $('td>[type=checkbox]').click();
   });
   $('#btn-historial-con').focusin(function () {
     $('[name=numeros]').attr('type', 'text');
     $('[name=numeros]').val(ns.toString());
   });
   $('.btn-editar-con').click(function () {
+    $('[name$=-ck]').prop('checked', false);
     eliminaVacios('[id$=ne]');
     eliminaVacios('[id$=ne]');
     a = 'ne-ck';
@@ -421,7 +443,7 @@ $(document).ready(function () {
     $('#m-titulo').html('Actualizar registro');
     $('[name=numero]').prop('readonly', true);
     $('[id$=-ne]').prop('disabled', true);
-    $('#modal').modal('show');
+    $('#modal-en').modal('show');
     modalSinfondo();
   });
   $('[name=btn_baja_con]').focusin(function () {
@@ -454,28 +476,8 @@ $(document).ready(function () {
     for (i = 0; i < a.length; i++) {
       if (a[i] == e) a.splice(i, 1);
     }
-  } //checkbox del listado
+  } //bindeaRecuperadosmos hacia el modal info////////////////////////////////////                
 
-
-  ids = [];
-  ns = [];
-  cas = [];
-  $('td>[type=checkbox]').click(function () {
-    re = $(this).parent().attr('re');
-    id = $('#id' + re).html();
-    n = $('#numero' + re).html();
-    ca = $('#cliente_actual' + re).html();
-
-    if ($(this)[0].checked === true) {
-      ids.push(id);
-      ns.push(n);
-      cas.push(ca);
-    } else {
-      saca(ids, id);
-      saca(ns, n);
-      saca(cas, ca);
-    }
-  }); //bindeaRecuperadosmos hacia el modal info////////////////////////////////////                
 
   $('.btn_info').focusin(function () {
     re = $(this).attr('re');
@@ -493,9 +495,7 @@ $(document).ready(function () {
     });
     $('#modal-info').modal('show');
     modalSinfondo();
-  }); //Selects de los filtros
-
-  var selsfil = ['#select-filtro-id_tipos', '#select-filtro-id_operadors', '#select-filtro-id_estados', '#select-filtro-id_tipo_numeros', '#select-filtro-id_servidors', '#select-filtro-id_entregas', '#select-filtro-id_motivo_bajas']; //ides de la tabla listado 
+  }); //ides de la tabla listado 
 
   var campos = ['id_tipo', 'id_operador', 'id_estado', 'id_tipo_numero', 'id_servidor', 'id_entrega', 'id_motivo_baja']; //Boton + filtros        
 
