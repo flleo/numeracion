@@ -37,11 +37,7 @@ h3,
 h4,
 th,
 #th-fecha {
-    color: #195baf;
-}
-
-#th-fecha {
-    border-color: #195baf;
+    color: #195baf !important;
 }
 
 .btn {

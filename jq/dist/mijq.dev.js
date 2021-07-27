@@ -2,28 +2,83 @@
 
 $(document).ready(function () {
   //Administracion///////////////////////////////////////////////////////////////////
-  var v = vip = vhost = vdes = vsf = tabla = btn = btnVal = id = op = sel = selRutaIp = selRutaDes = accion = existe = ip = des = a = '';
+  var v = vip = vhost = vdes = vsf = tabla = btn = btnVal = id = op = sel = selRutaIp = selRutaDes = html = accion = existe = ip = des = a = '';
   $('[class^=modal').modal('hide');
   $('form').attr('autocomplete', 'off');
   $('input').attr('autocomplete', 'off');
   $('#sel-id_servidor-ne').focusin(function () {
     sel_id_servidor_ne_checked = true;
-  }); //bindea los selects de admin con su input
+  });
+  $('#mostrar-desactivados-ck').focusout(function () {
+    ops = $('option[class=admin]');
+
+    if ($(this).is(':checked')) {
+      for (i = 0; i < ops.length; i++) {
+        s = $(ops[i]).attr('style');
+
+        if (s != '') {
+          $(ops[i]).show();
+        }
+      }
+    } else {
+      for (i = 0; i < ops.length; i++) {
+        s = $(ops[i]).attr('style');
+
+        if (s != '') {
+          $(ops[i]).hide();
+        }
+      }
+    }
+  });
+  ocultaDesactivados();
+
+  function ocultaDesactivados() {
+    ops = $('option[class=admin]');
+
+    for (i = 0; i < ops.length; i++) {
+      s = $(ops[i]).attr('style');
+
+      if (s != '') {
+        $(ops[i]).hide();
+      }
+    }
+
+    $('#mostrar-desactivados-ck').prop('checked', false);
+  }
+
+  $('select[id$=admin]').click(function () {
+    $(this).attr('style', '');
+  }); //Asigna valor al input, y desbloquea botnes, viene de bindeaRecuperadosOptionAdmin()
+
+  function bindeaRecuperadosInputAdmin() {
+    inp = $('#' + tabla + '-admin').val(html); //Recuperamos la class de input
+
+    clase = $(inp).attr('class'); //Le anadimos el color 
+
+    $(inp).attr('style', style);
+    estado = '';
+
+    if (html != '') {
+      desbloqueaBtns();
+    }
+  } //bindea los selects de admin con su input
+
 
   function bindeaRecuperadosOptionAdmin() {
     $('select[id$=admin]').change(function (event) {
       tabla = $(this).attr('tabla');
       id = $(this).val();
+      style = $(this).children('[value=' + id + ']').attr('style');
+      html = $(this).children(":selected").html();
+      bindeaRecuperadosInputAdmin();
 
       if (tabla == 'servidor') {
         event.preventDefault();
         bindeaRecuperadosServidor('');
-      } else {
-        html = $(this).children(":selected").html();
-        bindeaRecuperadosInput();
       }
     });
-  }
+  } //Devuelve valores host, ip , descripcion por id 
+
 
   function bindeaRecuperadosServidor(a) {
     url = "consultas.php?a=" + a + "&id=" + id + "&t=" + tabla;
@@ -36,6 +91,15 @@ $(document).ready(function () {
       success: function success(data) {
         if (a == '') {
           $('#response-' + tabla).html(data);
+
+          if (style == '') {
+            html = '';
+            ocultaDesactivados();
+          } else {
+            bindeaRecuperadosInputAdmin();
+            html = ' (Desactivado)';
+          }
+
           desbloqueaBtns();
           bindeaRecuperadosOptionAdmin();
         } else {
@@ -73,8 +137,8 @@ $(document).ready(function () {
 
     if (btnVal == 'Añadir') id = $('#lastId').html();
     btn.attr('disabled', false);
-    btn.val(btnVal); //Devuelve el valor original al boton
-    //aL picar en input admin cerramos el mensaje
+    btn.val(btnVal);
+    ocultaDesactivados(); //aL picar en input admin cerramos el mensaje
 
     cerrarMenClick();
   } //Obligamos a presionar cerrar en admin para que se recargue y los demas modales cojar el array $admins actualizado
@@ -216,18 +280,14 @@ $(document).ready(function () {
   tablas = ['tipo', 'operador', 'estado', 'tipo_numero', 'entrega', 'servidor', 'motivo_baja']; //Desbloquea los botones Actualizar y Borrar de admin
 
   function desbloqueaBtns() {
-    $('[class$=' + tabla + ']').prop('disabled', false);
-    $('[class$=' + tabla + ']').next().attr('title', '');
-  } //bindeaRecuperados el input con el click del option, viene de bindeaRecuperadosOption()
-
-
-  function bindeaRecuperadosInput() {
-    input = $('#' + tabla + '-admin').val(html);
-    v = $(input).val();
-
-    if (v != '') {
-      desbloqueaBtns(input);
+    if (html.substring(html.length - 14, html.length) == ' (Desactivado)') {
+      $('[class*=btn-warning-' + tabla + ']').prop('disabled', true);
+      $('[class*=btn-danger-' + tabla + ']').prop('disabled', false);
+    } else {
+      $('[class$=' + tabla + ']').prop('disabled', false);
     }
+
+    $('[class$=' + tabla + ']').next().attr('title', '');
   } //Click admin
 
 
@@ -284,7 +344,7 @@ $(document).ready(function () {
 
   function modalSinfondo() {
     if (window.matchMedia('(max-width: 768px)').matches) {
-      $('[class^=modal]').removeClass("modal-backdrop"); //$('[class^=modal][class=modal-backdrop]').css('width','935px');
+      $('[class^=modal]').removeClass("modal-backdrop");
     }
   } // cuando enter input filter
 
@@ -423,7 +483,6 @@ $(document).ready(function () {
     $('td>[type=checkbox]').click();
   });
   $('#btn-historial-con').focusin(function () {
-    $('[name=numeros]').attr('type', 'text');
     $('[name=numeros]').val(ns.toString());
   });
   $('.btn-editar-con').click(function () {

@@ -17,14 +17,12 @@ $camposb = array('numero', 'id_tipo', 'id_operador', 'id_estado', 'id_tipo_numer
 $camposf = array('numeros', 'id_tipos', 'id_operadors', 'id_estados', 'id_tipo_numeros', 'id_servidors', 'id_entregas', 'fecha_altas', 'fecha_ultimo_cambios', 'cliente_actuals', 'numeros_desvioss', 'observacioness', 'id_motivo_bajas');
 $pcampos = array('Número', 'Operador', 'Tipo', 'Estado',  'Tipo número', 'Servidor', 'Entrega',  'Fecha&nbsp;alta', 'Fec.&nbsp;últ.&nbsp;cambio', 'Client.&nbsp;actual', 'Núm.&nbsp;de&nbsp;desvío', 'Descripción', 'Observaciones');
 $pcamposf = array('Numeros', 'Tipos', 'Operadores',  'Estados', 'Tipos&nbsp;numeros', 'Servidores', 'Entregas',  'Fechas&nbsp;altas', 'Fechas&nbsp;ult.&nbsp;cam.', 'Clientes&nbsp;actuales', 'Numeros&nbsp;de&nbsp;desvios', 'Observaciones', 'Motivos&nbsp;baja');
-$pcampose = array('Numeros', 'Tipos', 'Operadores',  'Estados', 'Tipos de numeros', 'Servidores', 'Entregas',  'Fechas de altas', 'Fechas últimos cambios', 'Clientes actuales', 'Numeros de desvios', 'Observaciones', 'Motivos de baja');
+$pcampose = array('Numeros', 'Tipos', 'Operadores',  'Estados', 'Tipos de numeros',  'Entregas','Servidores',  'Fechas de altas', 'Fechas últimos cambios', 'Clientes actuales', 'Numeros de desvios', 'Observaciones', 'Motivos de baja');
 $bcampos  = $values  = $filtros = $valuesRecuperados  = $res = [];
 $nregistros = 0;
 $pintado = $reactivado = false;
 
 //Inicio
-
-
 
 //quitar filtros
 if (isset($_POST['quitar_filtros'])) {
@@ -54,10 +52,20 @@ if (isset($_POST['filtrar']) || isset($_POST['filtrar_historial'])) {
 }
 
 //Filtrar historial
-if (isset($_POST['historial']) || isset($_POST['historial_todos']) || isset($_POST['historial_con'])) {
+if (isset($_POST['historial_todos']) || isset($_POST['historial_con'])) {
     $tabla = 'numeracion_historial';
     bindeaFiltros();
 }
+
+//Hisotorial de fila del listado
+if (isset($_POST['historial'])) {  
+    $tabla = 'numeracion_historial'; 
+    $condiciones = [];
+    $valor = $_POST['numero'];  
+    $condicion = "numero in ($valor) ";
+    array_push($condiciones, $condicion);    
+    cargaDatosFiltrados();
+} 
 
 if (isset($_POST['page'])) {
     $tabla = $_POST['tabla'];
@@ -331,16 +339,14 @@ function fechaDesAsc()
 
 function grabaExcel($res)
 {
-    global  $pcampose, $filename, $titulo;
+    global  $campos,$pcampose, $filename, $titulo, $admins,$tablas;
 
     $filename = 'exports/file.xlsx';
     $titulo = $_POST['titulo'];
     if ($titulo == 'numeracion') {
         $size = sizeOf($pcampose) - 1;
-        //  $res = carga($titulo, '', 'ORDER BY  numero asc, fecha_ultimo_cambio desc');
     } else {
         $size = sizeOf($pcampose);
-        //   $res = carga($titulo, '', 'ORDER BY fecha_ultimo_cambio ');
     }
 
     $spread = new Spreadsheet();
@@ -354,13 +360,26 @@ function grabaExcel($res)
         $sheet->setCellValue($col[$j] . $row, $pcampose[$j]);
     }
     //Valores
-    foreach ($res as $re) {
-        $row++;
-        for ($j = 0; $j < $size; $j++) {
-            if ($re[$j] != null) {
-                $sheet->setCellValue($col[$j] . $row, $re[$j + 1]);
-            }
+    foreach ($res as $key) {
+        $row++;                       
+        $sheet->setCellValue($col[0] . $row, $key['numero']);
+        //De operador a servidor
+        for ($j = 0; $j < sizeOf($tablas)-1; $j++) {            
+            if($tablas[$j] == 'servidor'){
+                $val = $admins[$tablas[$j]][0][array_search($key['id_'.$tablas[$j]], array_column($admins[$tablas[$j]][0], 0))]['host'];
+            } else $val = $admins[$tablas[$j]][0][array_search($key['id_'.$tablas[$j]], array_column($admins[$tablas[$j]][0], 0))][$tablas[$j]];
+            $sheet->setCellValue($col[$j+1] . $row, $val);
         }
+        //de fecha_alta a observaciones
+        for ($j = 8; $j < 13; $j++) {
+           $sheet->setCellValue($col[$j-1] . $row, $key[$j]);
+        }
+        if(isset($key['id_motivo_baja'])){
+            $val = $admins['motivo_baja'][0][array_search($key['id_motivo_baja'], array_column($admins['motivo_baja'][0], 0))]['motivo_baja'];
+            $sheet->setCellValue($col[$j-1] . $row, $val);
+        }
+
+        
     }
     $writer = new Xlsx($spread);
     $writer->save($filename);
@@ -432,33 +451,53 @@ function bindeaFiltros()
     }
 }
 
+function bindeaCampo($campof)
+{
+    global $condiciones;
+    if (isset($_POST[$campof])) {
+        $valor = $_POST[$campof];
+        if ($valor != 'Todos') {
+            if($valor != '') {
+                $condicion = trim($campof, 's') . " like '%$valor%' ";
+                array_push($condiciones, $condicion);
+            }
+        }
+    }
+}
+
 //Carga filtros
 function prepara($i)
 {
-    global $camposf, $campos, $ncampos, $tam, $condiciones, $condicion;
+    global $camposf, $ncampos, $tam, $condiciones, $condicion;
     $ncampos++;
     $condicion = '';
     //Carga filtros
     $campo = $camposf[$i];
     if (isset($_POST[$campo])) {
         $valor = $_POST[$campo];
-        if ($valor == 'Todos') {
-            $valor = '';
+        if ($valor != 'Todos') {
+            if($valor != '') {     
+                if($campo == 'numeros') {                    
+                    $nums = explode(',',$valor);
+                    $isnum = true;
+                    if(sizeOf($nums) > 1) {                        
+                        foreach($nums as $num){
+                            if(!is_numeric($num)) $isnum = false;
+                        }
+                        if($isnum) $condicion = "numero in ($valor) ";
+                    } else {
+                        if(!is_numeric($valor)) $isnum = false;
+                        else $condicion = trim($campo, 's') . " like '%$valor%' ";
+                    }
+                    if(!$isnum) {
+                        echo  "<div class='alert alert-danger'>El número/s introducido no es correcto.</div>";
+                    }
+                } else {
+                    $condicion = trim($campo, 's') . " like '%$valor%' ";
+                }  
+                array_push($condiciones, $condicion);
+            }            
         }
-        if ($valor != '') {
-            $condicion = $campos[$i] . " like '%$valor%' ";
-        }
-        if ($condicion != '')
-            array_push($condiciones, $condicion);
-    }
-    //Carga solo el numero para historial
-    if (isset($_POST['historial_con']) || isset($_POST['historial'])) {
-        if(isset($_POST['numero']))
-        $valor = $_POST['numero'];
-        else $valor = $_POST['numeros'];
-        $condicion = "numero in ($valor) ";
-        $tam = 1;
-        array_push($condiciones, $condicion);
     }
     if ($ncampos == $tam) {
         cargaDatosFiltrados();
@@ -522,6 +561,7 @@ function filtros()
         }
         array_push($filtros, $pselects[$i]);
     }
+    //Exporta/////////////////////
     if (isset($_POST['exporta'])) {
         grabaExcel($res);
     } else
@@ -535,70 +575,75 @@ function pagina()
         $nregistros, $nregistrosPorPagina, $npaginas, $pag, $res;
 ?>
 
-    <!DOCTYPE html>
-    <html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="pragma" content="no-cache" />
-        <title>Listín Telefónico</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous">
-        </script>
-        <link type="text/css" rel="stylesheet" href="css/styles.css">
-        <style>
-            /* Medium devices (tablets, 617px and up)**/
-            @media (max-width: 768px) {
-                .modal-content {
-                    margin: 200px auto !important;
-                    margin-left: 45% !important;
-                    min-width: 600px !important;
-                }
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="pragma" content="no-cache" />
+    <title>Listín Telefónico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous">
+    </script>
+    <link type="text/css" rel="stylesheet" href="css/styles.css">
+    <style>
+    /* Medium devices (tablets, 617px and up)**/
+    @media (max-width: 768px) {
+        .modal-content {
+            margin: 200px auto !important;
+            margin-left: 45% !important;
+            min-width: 600px !important;
+        }
 
-                .container {
-                    min-width: 900px;
-                }
+        .container {
+            min-width: 900px;
+        }
 
-                table {
-                    margin: auto !important;
-                    max-width: 80% !important;
-                }
-            }
+        table {
+            margin: auto !important;
+            max-width: 80% !important;
+        }
+    }
 
-            @media (min-width: 618px) {
-                .modal-content {
-                    margin: 80px auto !important;
-                    margin-left: 15% !important;
-                    min-width: 70% !important;
-                }
-            }
+    @media (min-width: 618px) {
+        .modal-content {
+            margin: 80px auto !important;
+            margin-left: 15% !important;
+            min-width: 70% !important;
+        }
+    }
 
-            @media (min-width: 868px) {
-                .modal-content {
-                    margin: 100px auto !important;
+    @media (min-width: 868px) {
+        .modal-content {
+            margin: 100px auto !important;
 
-                }
+        }
 
-                #movimientos {
-                    display: flex;
-                    flex-wrap: wrap;
-                }
+        #movimientos {
+            display: flex;
+            flex-wrap: wrap;
+        }
 
-                table {
-                    margin: 5% !important;
-                    max-width: 90% !important;
-                }
-            }
-          
-        </style>
-    </head>
+        table {
+            margin: 5% !important;
+            max-width: 90% !important;
+        }
+    }
 
-    <body>
-        <?php
+    [value='Ocultar desactivados'] {
+        color: #195baf;
+    }
+    </style>
+</head>
+
+<body>
+    <?php
         echo $message; ?>
-        <div class="container w-100" style="max-width:2000px;">
-            <?php
+    <div class="container w-100" style="max-width:2000px;">
+        <?php
             if (isset($_POST['page'])) {
                 $tabla = $_POST['tabla'];
             }
@@ -607,12 +652,12 @@ function pagina()
             } else {
                 $titulo = 'historial';
             } ?>
-            <h3 class="text-center">Listín Telefónico: <span id="titulo"><?php echo $titulo; ?></span></h3>
-            <div class="   ">
-                <!--Pintamos los filtros-->
-                <form action="" method="POST" id="movimientos">
-                    <div id="filtros" class="d-flex flex-wrap">
-                        <?php
+        <h3 class="text-center">Listín Telefónico: <span id="titulo"><?php echo $titulo; ?></span></h3>
+        <div class="   ">
+            <!--Pintamos los filtros-->
+            <form action="" method="POST" id="movimientos">
+                <div id="filtros" class="d-flex flex-wrap">
+                    <?php
                         for ($i = 0; $i < sizeof($filtros); $i++) {
                             /*no ocultos*/
                             if ($camposf[$i] == 'numeros' || $camposf[$i] == 'id_operadors' || (isset($_POST[$camposf[$i]]) && $_POST[$camposf[$i]] != '' && $_POST[$camposf[$i]] != 'Todos')) {
@@ -631,7 +676,7 @@ function pagina()
                                 if (isset($_POST['numero'])) {
                                     $value  = $_POST['numero'];
                                 }
-                                echo "<input id='$camposf[$i]' class='form-control filter' name=$camposf[$i]  type='number' value='$value' ></div>";
+                                echo "<input id='$camposf[$i]' class='form-control filter' name=$camposf[$i]  type='text' value='$value' ></div>";
                                 /*10 numeros_desvios; 12 motivo_baja : campos con select */
                             } elseif ($i < 10 || $i == 12) {
                                 $tablasf = array(
@@ -664,9 +709,9 @@ function pagina()
                         <input type="button" class="btn  btn-light btn-filtros border-secondary form-control"
                             value="+ Filtros" style="height:35px;width:100opx;" />
                     </div>'; ?>
-                    </div>
-                    <div class=" d-flex flex-wrap w-100  m-1  ml-0 pl-0">
-                        <?php if ($tabla == 'numeracion_historial') {
+                </div>
+                <div class=" d-flex flex-wrap w-100  m-1  ml-0 pl-0">
+                    <?php if ($tabla == 'numeracion_historial') {
                             echo '<input type="submit"  class="btn btn-primary btn-numeracion  " name="numeracion" value="Numeración" />  ';
                         } else {
                             //Nuevo, administrador, historial
@@ -676,16 +721,18 @@ function pagina()
                     data-bs-target="#modal-admin" data-bs-toggle="modal" name="administracion"  />                   
                     <input type="submit" id="btn-historial-todos" class="btn btn-secondary text-light border-secondary btn-numeracion mb-1" name="historial_todos"   value="Historial" />  ';
                         } ?>
-                        <!--Exportar-->
-                        <form id="form-exporta" action="consultas.php" method="post">
-                            <input hidden name="titulo" value="<?php echo $tabla; ?>">
-                            <input id='exporta' tabla='<?php echo $tabla; ?>' type="submit" name="exporta" class="btn text-success btn-light border-success mx-2" data-toggle="tooltip" title="Exportar excel" value="Exportar" />
-                        </form>
-                        <!--//Paginacion*/-->
-                        <nav class="pb-0" aria-label="Page navigation example ">
-                            <input hidden name="tabla" value="<?php echo $tabla; ?>">
-                            <ul class="pagination ml-5  d-flex">
-                                <?php
+                    <!--Exportar-->
+                    <form id="form-exporta" action="consultas.php" method="post">
+                        <input hidden name="titulo" value="<?php echo $tabla; ?>">
+                        <input id='exporta' tabla='<?php echo $tabla; ?>' type="submit" name="exporta"
+                            class="btn text-success btn-light border-success mx-2" data-toggle="tooltip"
+                            title="Exportar excel" value="Exportar" />
+                    </form>
+                    <!--//Paginacion*/-->
+                    <nav class="pb-0" aria-label="Page navigation example ">
+                        <input hidden name="tabla" value="<?php echo $tabla; ?>">
+                        <ul class="pagination ml-5  d-flex">
+                            <?php
                                 $nregistros = sizeof($res);
                                 $nregistrosPorPagina = 25;
                                 $npaginas = ceil($nregistros / $nregistrosPorPagina);
@@ -729,8 +776,7 @@ function pagina()
                                         echo '<button type="submit"  class="page-link page-number" name="page" value="' . $p . '" aria-label="actual">' . $p . '</button>';
                                     }
                                     echo '</li>';
-                                }
-                               
+                                }                               
                                 echo '
                      <li class="page-item">
       <button id="btn-next" type="submit"  class="page-link"  name="page" value="' . $po . '" aria-label="next">                        
@@ -749,7 +795,7 @@ function pagina()
                                 //Opciones conjuntas: reasignar,editar,historial,baja///////////////
                                 if ($tabla == 'numeracion') {
                                 ?>
-                                <?php echo " 
+                            <?php echo " 
                 <input  type='button' class='btn btn-info btn-reasignar-con  mb-1 mx-2' data-toggle='modal' title='Reasigna todos los registros de un tipo, hacia otro tipo' value='Reasignar' style='height:35px;'>                 
                 <input  type='button' class='btn btn-primary btn-editar-con  mb-1' data-toggle='modal-en' value='Editar' style='height:35px;'>               
                 <input id='btn-historial-con' type='submit'  name='historial_con' class='btn btn-secondary text-light btn-historial-con mx-2' value='Historial' style='height:35px;'>";
@@ -759,7 +805,6 @@ function pagina()
                 </form>
             </div>
         </div>';
-
                                 pinta();
                             }
 
@@ -769,7 +814,6 @@ function pagina()
                                 global $admins;
                                 echo '  <select class="form-select " id="select-filtro-' . $campof . '" name="' . $campof . '" style="width:115px;">';
                                 echo "      <option  value='Todos' >Todos</option>";
-
                                 foreach ($filtro as $num) {
                                     if ($t != '') {
                                         $v = $admins[$t][0][array_search($num, array_column($admins[$t][0], 0))][$t];
@@ -794,7 +838,7 @@ function pagina()
                                 //Filtros inicio
                                 if (isset($_POST['page'])) {
                                     $pag = $_POST['page'];
-                                }
+                                } else $pag = 1;
                                 if ($pag == ($npaginas + 1)) {
                                     $pag = 1;
                                 }
@@ -935,39 +979,41 @@ function pagina()
                             //Para que al exposrtar no incluya los modales
                             if (!isset($_POST['exporta'])) {
                                 ?>
-                                <!-- Modal Reasignar-->
-                                <div class="modal fade" id="modal-reasignar" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="exampleModalLabel">Reasignación de campos</h5>
-                                                <button type="button" class="btn-close cerrar-reasignar" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <form id="form-reasignar" name="reasignar" method="post">
-                                                <div class=" modal-body d-flex justify-content-between">
-                                                    <div class="w-25">
-                                                        <h6>Original</h6>
-                                                        <?php
+                            <!-- Modal Reasignar-->
+                            <div class="modal fade" id="modal-reasignar" data-bs-backdrop="static"
+                                data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"
+                                aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="exampleModalLabel">Reasignación de campos</h5>
+                                            <button type="button" class="btn-close cerrar-reasignar"
+                                                data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form id="form-reasignar" name="reasignar" method="post">
+                                            <div class=" modal-body d-flex justify-content-between">
+                                                <div class="w-25">
+                                                    <h6>Original</h6>
+                                                    <?php
                                                         for ($i = 0; $i < sizeOf($pcamposS) - 1; $i++) {
                                                             echo "<div class='d-flex '>
-                    <input  type='checkbox' name='$tablas[$i]-ck' style='margin-right:2px;'>
-                    <label class='m-1 '>$pcamposS[$i]</label>                      
-                </div>";
+                                                                    <input  type='checkbox' name='$tablas[$i]-ck' style='margin-right:2px;'>
+                                                                    <label class='m-1 '>$pcamposS[$i]</label>                      
+                                                                </div>";
                                                             echo "<select class='form-select' name='sel-ori-$tablas[$i]' >";
-                                                            /* foreach ($filtros[$i + 1] as $f) {
-                                                                  echo "<option value=$f>$v<option>";
-                                                            }*/
+                                                          
                                                             echo "</select>";
                                                         }
                                                         ?>
-                                                    </div>
-                                                    <button id="btn-reasignar-modal" class="btn border-secondary">Reasignar</button>
-                                                    <div class="w-25 form-group ">
-                                                        <h6 class="mb-3">Reasignado</h6>
-                                                        <?php
+                                                </div>
+                                                <button id="btn-reasignar-modal"
+                                                    class="btn border-secondary">Reasignar</button>
+                                                <div class="w-25 form-group ">
+                                                    <h6 class="mb-3">Reasignado</h6>
+                                                    <?php
                                                         for ($i = 0; $i < sizeOf($pcamposS) - 1; $i++) {
                                                             if($i < 2)  echo "<div class='mt-2 '";
-                                                            else  echo "<div class='mt- mb-2'";
+                                                            else  echo "<div class='mb-2'";
                                                             echo "<label >$pcamposS[$i]</label>";
                                                             echo "<select class='form-select mt-1' name='sel-rea-adm-$tablas[$i]'>";
                                                             foreach ($admins[$tablas[$i]][0] as $f) {
@@ -978,46 +1024,67 @@ function pagina()
                                                             echo "</div>";
                                                         }
                                                         ?>
-                                                    </div>
                                                 </div>
-                                            </form>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary cerrar-reasignar" data-bs-dismiss="modal">Close</button>
                                             </div>
+                                        </form>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary cerrar-reasignar"
+                                                data-bs-dismiss="modal">Close</button>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!--Modal Admin-->
+                            <!--Modal Admin-->
 
-                                <div class="modal fade " id="modal-admin" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                                    <div class="modal-dialog moodal-dialog-centered" role="document">
-                                        <div class="modal-content p-0 modaladmin">
-                                            <div class="modal-header bg-info ">
-                                                <h3 class="modal-title text-white mt-2 mb-0 p-0">Administración</h3>
-                                                <button type="button" class=" btn-cerrar-admin" data-bs-dismiss="modal" aria-label="Cerrar">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
+                            <div class="modal fade " id="modal-admin" role="dialog" data-bs-backdrop="static"
+                                data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel"
+                                aria-hidden="true">
+                                <div class="modal-dialog moodal-dialog-centered" role="document">
+                                    <div class="modal-content p-0 modaladmin">
+                                        <div class="modal-header bg-info ">
+                                            <h3 class="modal-title text-white mt-2 mb-0 p-0">Administración</h3>
+                                            <div class="input-group w-50">
+                                                <div class="input-group-text">
+                                                    <input id="mostrar-desactivados-ck" class="form-check-input mt-0"
+                                                        type="checkbox" value="checked">
+                                                </div>
+                                                <input type="text" class="form-control " value="Mostrar desactivados"
+                                                    disabled="true">
                                             </div>
-                                            <div class="modal-body ">
-                                                <div class="form-group ">
-                                                    <?php for ($i = 0; $i < sizeOf($tablas); $i++) {
+                                            <button type="button" class=" btn-cerrar-admin" data-bs-dismiss="modal"
+                                                aria-label="Cerrar">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body ">
+                                            <div class="form-group ">
+                                                <?php for ($i = 0; $i < sizeOf($tablas); $i++) {
                                                         $t = $tablas[$i];
                                                         $ps = $pcamposSS[$i];
                                                         $p = $pcamposS[$i];
                                                     ?>
-                                                        <div class="form-group mb-4 pt-2">
-                                                            <div class=" d-flex flex-row-reverse pl-4  mb-2 ">
-                                                                <div class="d-flex   flex-wrap btns-admin  btn-sm mr-4">
-                                                                    <input type="button" class="btn btn-sm btn-success ml-4 btn-action-admin btn-success-<?php echo $t . ' ' . $t; ?>" value="Añadir">
-                                                                    <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="Seleccione un elemento">
-                                                                        <input type="button" class="btn btn-sm btn-warning  mx-4 btn-action-admin btn-warning-<?php echo $t . ' ' . $t; ?>" value="Actualizar" disabled>
-                                                                        <input type="button" class="btn btn-sm btn-danger  seleccione act-des btn-action-admin btn-danger-<?php echo $t . ' ' . $t; ?>" data-bs-toggle="modal" data-bs-target="#modal-error-borrar-admin" tabla="<?php echo $t; ?>" value="Act-Des" disabled>
-                                                                    </span>
-                                                                </div>
-                                                                <h5 class="flex-grow-1"><?php echo $ps; ?></h5>
-                                                            </div>
-                                                        <?php if ($t == 'servidor') {
+                                                <div class="form-group mb-4 pt-2">
+                                                    <div class=" d-flex flex-row-reverse pl-4  mb-2 ">
+                                                        <div class="d-flex   flex-wrap btns-admin  btn-sm mr-4">
+                                                            <input type="button"
+                                                                class="btn btn-sm btn-success ml-4 btn-action-admin btn-success-<?php echo $t . ' ' . $t; ?>"
+                                                                value="Añadir">
+                                                            <span class="d-inline-block" tabindex="0"
+                                                                data-bs-toggle="tooltip" title="Seleccione un elemento">
+                                                                <input type="button"
+                                                                    class="btn btn-sm btn-warning  mx-4 btn-action-admin btn-warning-<?php echo $t . ' ' . $t; ?>"
+                                                                    value="Actualizar" disabled>
+                                                                <input type="button"
+                                                                    class="btn btn-sm btn-danger  seleccione act-des btn-action-admin btn-danger-<?php echo $t . ' ' . $t; ?>"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#modal-error-borrar-admin"
+                                                                    tabla="<?php echo $t; ?>" value="Act-Des" disabled>
+                                                            </span>
+                                                        </div>
+                                                        <h5 class="flex-grow-1"><?php echo $ps; ?></h5>
+                                                    </div>
+                                                    <?php if ($t == 'servidor') {
                                                             echo '            <div id="response-' . $t . '" class="row  px-4 ">';
                                                             cargaSelsServidor();
                                                             echo '             </div>';
@@ -1049,246 +1116,337 @@ function pagina()
 </div>';
                                                         ?>
 
-                                                        <!--Modal borrar admin-->
-                                                        <div class="modal fade " id="modal-error-borrar-admin" tabindex="-1" role="dialog">
-                                                            <div class="modal-dialog moodal-dialog-centered " role="document">
-                                                                <div id="modalcssbaja" class="modal-content">
-                                                                    <div class="modal-header">
-                                                                        <h6 id="titulo-error-borrar-admin" class="modal-title text-secondary mt-2">
-                                                                            Administración: datos</h6>
-                                                                        <button class="close btn-cerrar" data-bs-dismiss="modal" aria-label="Cerrar">
-                                                                            <span aria-hidden="true">&times;</span>
-                                                                        </button>
-                                                                    </div>
-                                                                    <div class="modal-body d-flex flex-wrap">
-                                                                        <img id="img-error" class="mt-3 mx-4" src="images/Desactivado.jpg">
-                                                                        <h6 class="mt-4" id="seguro-borrar"></h6>
-                                                                    </div>
-                                                                    <div class="modal-footer ">
-                                                                        <button id="btn-borrar-dato-final" name="borrar_dato_admin" class="btn btn-danger">Vale</button>
-                                                                        <button class="btn btn-secondary btn-cerrar " data-bs-dismiss="modal">Cerrar</button>
-                                                                    </div>
+                                                    <!--Modal borrar admin-->
+                                                    <div class="modal fade " id="modal-error-borrar-admin" tabindex="-1"
+                                                        role="dialog">
+                                                        <div class="modal-dialog moodal-dialog-centered "
+                                                            role="document">
+                                                            <div id="modalcssbaja" class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h6 id="titulo-error-borrar-admin"
+                                                                        class="modal-title text-secondary mt-2">
+                                                                        Administración: datos</h6>
+                                                                    <button class="close btn-cerrar"
+                                                                        data-bs-dismiss="modal" aria-label="Cerrar">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="modal-body d-flex flex-wrap">
+                                                                    <img id="img-error" class="mt-3 mx-4"
+                                                                        src="images/Desactivado.jpg">
+                                                                    <h6 class="mt-4" id="seguro-borrar"></h6>
+                                                                </div>
+                                                                <div class="modal-footer ">
+                                                                    <button id="btn-borrar-dato-final"
+                                                                        name="borrar_dato_admin"
+                                                                        class="btn btn-danger">Vale</button>
+                                                                    <button class="btn btn-secondary btn-cerrar "
+                                                                        data-bs-dismiss="modal">Cerrar</button>
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                    </div>
 
-                                                        <!-- Modal Editar/Nuevo-->
-                                                        <div class="modal fade" id="modal-en" tabindex="-1" role="dialog">
-                                                            <div class="modal-dialog moodal-dialog-centered" role="document">
-                                                                <div class="modal-content p-0 modalcss">
-                                                                    <div class="modal-header bg-info ">
-                                                                        <h5 id="m-titulo" class="modal-title text-white mt-2 mb-0 p-0">
-                                                                            Nuevo
-                                                                            registro</h5>
-                                                                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Cerrar4">
-                                                                            <span aria-hidden="true">&times;</span>
-                                                                        </button>
-                                                                    </div>
-                                                                    <form role="form" method="post" id="modal-form-id" enctype="multipart/form-data" autocomplete=off>
-                                                                        <div class="modal-body">
-                                                                            <div class="form-group p-2 d-flex flex-column justify-space-between">
-                                                                                <input type="text" hidden name="id">
-                                                                                <input type="text" hidden name="fecha_alta" id="fecha_alta-ne">
-                                                                                <div class="form-group w-100 ">
-                                                                                    <label for="numero">Número/s</label>
-                                                                                    <input type="tel" class="form-control" name="numero" pattern="\d+ *(,? *\d+ *)*,?" value="" required>
-                                                                                    <small>Format: 123456789, 922567897,
-                                                                                        822456456</small>
+                                                    <!-- Modal Editar/Nuevo-->
+                                                    <div class="modal fade" id="modal-en" tabindex="-1" role="dialog">
+                                                        <div class="modal-dialog moodal-dialog-centered"
+                                                            role="document">
+                                                            <div class="modal-content p-0 modalcss">
+                                                                <div class="modal-header bg-info ">
+                                                                    <h5 id="m-titulo"
+                                                                        class="modal-title text-white mt-2 mb-0 p-0">
+                                                                        Nuevo
+                                                                        registro</h5>
+                                                                    <button type="button" class="close"
+                                                                        data-bs-dismiss="modal" aria-label="Cerrar4">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <form role="form" method="post" id="modal-form-id"
+                                                                    enctype="multipart/form-data" autocomplete=off>
+                                                                    <div class="modal-body">
+                                                                        <div
+                                                                            class="form-group p-2 d-flex flex-column justify-space-between">
+                                                                            <input type="text" hidden name="id">
+                                                                            <input type="text" hidden name="fecha_alta"
+                                                                                id="fecha_alta-ne">
+                                                                            <div class="form-group w-100 ">
+                                                                                <label for="numero">Número/s</label>
+                                                                                <input type="tel" class="form-control"
+                                                                                    name="numero"
+                                                                                    pattern="\d+ *(,? *\d+ *)*,?"
+                                                                                    value="" required>
+                                                                                <small>Format: 123456789, 922567897,
+                                                                                    822456456</small>
+                                                                            </div>
+                                                                            <div class="form-group  d-flex flex-wrap">
+                                                                                <div class="form-group ">
+                                                                                    <div
+                                                                                        class="d-flex justify-content-between">
+                                                                                        <label
+                                                                                            for="id_tipo">Tipo</label>
+                                                                                        <input type="checkbox"
+                                                                                            name="tipo-ck">
+                                                                                    </div>
+                                                                                    <select class="form-select "
+                                                                                        name="id_tipo"
+                                                                                        id="sel-id_tipo-ne">
+                                                                                        <?php foreach ($admins['tipo'][0] as $f) {
+                                                                                                if ($f['activo'])
+                                                                                                    echo "<option value=$f[0]>$f[1]<option>";
+                                                                                            }
+                                                                                            ?> </select>
                                                                                 </div>
-                                                                                <div class="form-group  d-flex flex-wrap">
-                                                                                    <div class="form-group ">
-                                                                                        <div class="d-flex justify-content-between">
-                                                                                            <label for="id_tipo">Tipo</label>
-                                                                                            <input type="checkbox" name="tipo-ck">
-                                                                                        </div>
-                                                                                        <select class="form-select " name="id_tipo" id="sel-id_tipo-ne">
-                                                                                            <?php foreach ($admins['tipo'][0] as $f) {
+                                                                                <div class="form-group mx-4">
+                                                                                    <div
+                                                                                        class="d-flex justify-content-between">
+                                                                                        <label
+                                                                                            for="id_operador">Operador</label>
+                                                                                        <input type="checkbox"
+                                                                                            name="operador-ck">
+                                                                                    </div>
+                                                                                    <select class="form-select "
+                                                                                        name="id_operador"
+                                                                                        id="sel-id_operador-ne">
+                                                                                        <?php foreach ($admins['operador'][0] as $f) {
                                                                                                 if ($f['activo'])
                                                                                                     echo "<option value=$f[0]>$f[1]<option>";
                                                                                             }
                                                                                             ?> </select>
+                                                                                </div>
+                                                                                <div class="form-group ">
+                                                                                    <div
+                                                                                        class="d-flex justify-content-between">
+                                                                                        <label
+                                                                                            for="id_estado">Estado</label>
+                                                                                        <input type="checkbox"
+                                                                                            name="estado-ck">
                                                                                     </div>
-                                                                                    <div class="form-group mx-4">
-                                                                                        <div class="d-flex justify-content-between">
-                                                                                            <label for="id_operador">Operador</label>
-                                                                                            <input type="checkbox" name="operador-ck">
-                                                                                        </div>
-                                                                                        <select class="form-select " name="id_operador" id="sel-id_operador-ne">
-                                                                                            <?php foreach ($admins['operador'][0] as $f) {
-                                                                                                if ($f['activo'])
-                                                                                                    echo "<option value=$f[0]>$f[1]<option>";
-                                                                                            }
-                                                                                            ?> </select>
-                                                                                    </div>
-                                                                                    <div class="form-group ">
-                                                                                        <div class="d-flex justify-content-between">
-                                                                                            <label for="id_estado">Estado</label>
-                                                                                            <input type="checkbox" name="estado-ck">
-                                                                                        </div>
-                                                                                        <select class="form-select" name="id_estado" id="sel-id_estado-ne">
-                                                                                            <?php foreach ($admins['estado'][0] as $f) {
+                                                                                    <select class="form-select"
+                                                                                        name="id_estado"
+                                                                                        id="sel-id_estado-ne">
+                                                                                        <?php foreach ($admins['estado'][0] as $f) {
                                                                                                 if ($f['estado'])
                                                                                                     echo "<option value=$f[0]>$f[1]<option>";
                                                                                             }
                                                                                             ?> </select>
-                                                                                    </div>
-                                                                                    <div class="form-group mx-4">
-                                                                                        <div class="d-flex justify-content-between">
-                                                                                            <label for="tipo_numero">Tipo de
-                                                                                                número</label>
-                                                                                            <input type="checkbox" name="tipo_numero-ck">
-                                                                                        </div>
-                                                                                        <select class="form-select " name="id_tipo_numero" id="sel-id_tipo_numero-ne">
-                                                                                            <?php foreach ($admins['tipo_numero'][0] as $f) {
-                                                                                                if ($f['activo'])
-                                                                                                    echo "<option value=$f[0]>$f[1]<option>";
-                                                                                            }
-                                                                                            ?> </select>
-                                                                                    </div>
-                                                                                    <div class="form-group ml-4">
-                                                                                        <div class="d-flex justify-content-between">
-                                                                                            <label for="id_entrega">Entrega</label>
-                                                                                            <input type="checkbox" name="entrega-ck">
-                                                                                        </div>
-                                                                                        <select class="form-select " name="id_entrega" id="sel-id_entrega-ne">
-                                                                                            <?php foreach ($admins['entrega'][0] as $f) {
-                                                                                                if ($f['activo'])
-                                                                                                    echo "<option value=$f[0]>$f[1]<option>";
-                                                                                            }
-                                                                                            ?> </select>
-                                                                                    </div>
                                                                                 </div>
-                                                                                <div id="response-servidor-ne" class="form-group ">
-                                                                                    <select hidden class="form-select" name="id_servidor" id="sel-id_servidor-ne" tabla="servidor">
-                                                                                        <?php foreach ($admins['servidor'][0] as $f) {
+                                                                                <div class="form-group mx-4">
+                                                                                    <div
+                                                                                        class="d-flex justify-content-between">
+                                                                                        <label for="tipo_numero">Tipo de
+                                                                                            número</label>
+                                                                                        <input type="checkbox"
+                                                                                            name="tipo_numero-ck">
+                                                                                    </div>
+                                                                                    <select class="form-select "
+                                                                                        name="id_tipo_numero"
+                                                                                        id="sel-id_tipo_numero-ne">
+                                                                                        <?php foreach ($admins['tipo_numero'][0] as $f) {
+                                                                                                if ($f['activo'])
+                                                                                                    echo "<option value=$f[0]>$f[1]<option>";
+                                                                                            }
+                                                                                            ?> </select>
+                                                                                </div>
+                                                                                <div class="form-group ml-4">
+                                                                                    <div
+                                                                                        class="d-flex justify-content-between">
+                                                                                        <label
+                                                                                            for="id_entrega">Entrega</label>
+                                                                                        <input type="checkbox"
+                                                                                            name="entrega-ck">
+                                                                                    </div>
+                                                                                    <select class="form-select "
+                                                                                        name="id_entrega"
+                                                                                        id="sel-id_entrega-ne">
+                                                                                        <?php foreach ($admins['entrega'][0] as $f) {
+                                                                                                if ($f['activo'])
+                                                                                                    echo "<option value=$f[0]>$f[1]<option>";
+                                                                                            }
+                                                                                            ?> </select>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div id="response-servidor-ne"
+                                                                                class="form-group ">
+                                                                                <select hidden class="form-select"
+                                                                                    name="id_servidor"
+                                                                                    id="sel-id_servidor-ne"
+                                                                                    tabla="servidor">
+                                                                                    <?php foreach ($admins['servidor'][0] as $f) {
                                                                                             if ($f['activo'])
                                                                                                 echo "<option value=$f[0]>$f[1]<option>";
                                                                                         }
                                                                                         ?>
-                                                                                    </select>
-                                                                                </div>
-                                                                                <div class="form-group w-100 mt-1">
-                                                                                    <label for="numero">Cliente&nbsp;actual</label>
-                                                                                    <input type="text" class="form-control mt-2" name="cliente_actual" id="cliente_actual-ne">
-                                                                                </div>
-                                                                                <div class="form-group ">
-                                                                                    <div class="d-flex justify-content-between">
-                                                                                        <label for="numeros_desvios">Núm.
-                                                                                            desvíos</label>
-                                                                                        <input type="checkbox" name="tipo-ck">
-                                                                                    </div>
-                                                                                    <textarea class="form-control" name="numeros_desvios" id="numeros_desvios-ne" value=""></textarea>
-                                                                                </div>
-                                                                                <div class="form-group  ">
-                                                                                    <div class="d-flex justify-content-between">
-                                                                                        <label for="observaciones">Observaciones</label>
-                                                                                        <input type="checkbox" name="tipo-ck">
-                                                                                    </div>
-                                                                                    <textarea type="text" class="form-control" name="observaciones" id="observaciones-ne" value=""></textarea>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="modal-footer ">
-                                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                                            <input type="submit" id="btn-modal-submit" class="btn btn-primary " name='graba' value="Grabar" />
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <!--Modal baja-->
-                                                        <div class="modal" id="modal-baja" tabindex="-1" role="dialog">
-                                                            <div class="modal-dialog" role="document">
-                                                                <div id="modalcssbaja" class="modal-content">
-                                                                    <div class="modal-header">
-                                                                        <h4 class="modal-title text-secondary">Procedimiento
-                                                                            de baja</h4>
-                                                                        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Cerrar">
-                                                                            <span aria-hidden="true">&times;</span>
-                                                                        </button>
-                                                                    </div>
-                                                                    <form method='post' enctype="multipart/form-data">
-                                                                        <div class="modal-body">
-                                                                            <input hidden name="id_baja" id="id-baja">
-                                                                            <input hidden name="numero_baja" id="numero-baja">
-                                                                            <h5>¿Seguro que quiere dar de baja el número/s
-                                                                                <b id="numeroh-baja"></b>&nbsp;?
-                                                                            </h5>
-                                                                            <div class="form-group d-flex flex-wrap mt-5 mx-5 justify-content-between">
-                                                                                <h5><b>Indique&nbsp;el&nbsp;motivo:</b></h5>
-                                                                                <select class="form-select w-50 " name="id_motivo_baja" id="id-motivo-baja">
-                                                                                    <?php
-                                                                                    $res = carga("motivo_baja", '', "ORDER BY motivo_baja ASC");
-                                                                                    cargaSel($res,  'motivo_baja'); ?>
                                                                                 </select>
                                                                             </div>
+                                                                            <div class="form-group w-100 mt-1">
+                                                                                <label
+                                                                                    for="numero">Cliente&nbsp;actual</label>
+                                                                                <input type="text"
+                                                                                    class="form-control mt-2"
+                                                                                    name="cliente_actual"
+                                                                                    id="cliente_actual-ne">
+                                                                            </div>
+                                                                            <div class="form-group ">
+                                                                                <div
+                                                                                    class="d-flex justify-content-between">
+                                                                                    <label for="numeros_desvios">Núm.
+                                                                                        desvíos</label>
+                                                                                    <input type="checkbox"
+                                                                                        name="tipo-ck">
+                                                                                </div>
+                                                                                <textarea class="form-control"
+                                                                                    name="numeros_desvios"
+                                                                                    id="numeros_desvios-ne"
+                                                                                    value=""></textarea>
+                                                                            </div>
+                                                                            <div class="form-group  ">
+                                                                                <div
+                                                                                    class="d-flex justify-content-between">
+                                                                                    <label
+                                                                                        for="observaciones">Observaciones</label>
+                                                                                    <input type="checkbox"
+                                                                                        name="tipo-ck">
+                                                                                </div>
+                                                                                <textarea type="text"
+                                                                                    class="form-control"
+                                                                                    name="observaciones"
+                                                                                    id="observaciones-ne"
+                                                                                    value=""></textarea>
+                                                                            </div>
                                                                         </div>
-                                                                        <div class="modal-footer">
-                                                                            <button id="btn-hacer-baja" type="submit" name="baja" class="btn btn-danger">Baja</button>
-                                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                                    </div>
+                                                                    <div class="modal-footer ">
+                                                                        <button type="button" class="btn btn-secondary"
+                                                                            data-bs-dismiss="modal">Close</button>
+                                                                        <input type="submit" id="btn-modal-submit"
+                                                                            class="btn btn-primary " name='graba'
+                                                                            value="Grabar" />
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!--Modal baja-->
+                                                    <div class="modal" id="modal-baja" tabindex="-1" role="dialog">
+                                                        <div class="modal-dialog" role="document">
+                                                            <div id="modalcssbaja" class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h4 class="modal-title text-secondary">Procedimiento
+                                                                        de baja</h4>
+                                                                    <button type="button" class="close"
+                                                                        data-bs-dismiss="modal" aria-label="Cerrar">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <form method='post' enctype="multipart/form-data">
+                                                                    <div class="modal-body">
+                                                                        <input hidden name="id_baja" id="id-baja">
+                                                                        <input hidden name="numero_baja"
+                                                                            id="numero-baja">
+                                                                        <h5>¿Seguro que quiere dar de baja el número/s
+                                                                            <b id="numeroh-baja"></b>&nbsp;?
+                                                                        </h5>
+                                                                        <div
+                                                                            class="form-group d-flex flex-wrap mt-5 mx-5 justify-content-between">
+                                                                            <h5><b>Indique&nbsp;el&nbsp;motivo:</b></h5>
+                                                                            <select class="form-select w-50 "
+                                                                                name="id_motivo_baja"
+                                                                                id="id-motivo-baja">
+                                                                                <?php
+                                                                                    $res = carga("motivo_baja", '', "ORDER BY motivo_baja ASC");
+                                                                                    cargaSel($res,  'motivo_baja'); ?>
+                                                                            </select>
                                                                         </div>
-                                                                    </form>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button id="btn-hacer-baja" type="submit"
+                                                                            name="baja"
+                                                                            class="btn btn-danger">Baja</button>
+                                                                        <button type="button" class="btn btn-secondary"
+                                                                            data-bs-dismiss="modal">Cerrar</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Modal info-->
+                                                    <div class="modal fade " id="modal-info" tabindex="-1" role="dialog"
+                                                        aria-labelledby="modelTitleId" aria-hidden="true">
+                                                        <div class="modal-dialog " role="document">
+                                                            <div id="modalcssinfo" class="modal-content ">
+                                                                <div class="modal-header bg-info ">
+                                                                    <h4 id="m-titulo"
+                                                                        class="modal-title text-white mt-2 mb-0 p-0">+
+                                                                        info</h4>
+                                                                    <button type="button" class=""
+                                                                        data-bs-dismiss="modal" aria-label="Cerrar">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <div class="form-group ">
+                                                                        <div class="form-group mb-4">
+                                                                            <div
+                                                                                class=' d-flex justify-content-between mx-4'>
+                                                                                <div class='form-group '>
+                                                                                    <label for='info-fecha_alta'>Fecha
+                                                                                        del alta</label>
+                                                                                    <h5 readonly id='info-fecha_alta'
+                                                                                        class='form-control'></h5>
+                                                                                </div>
+                                                                                <div class='form-group  ml-5'>
+                                                                                    <label
+                                                                                        for='info-fecha_ultimo_cambio'>Fecha
+                                                                                        ult.cambio</label>
+                                                                                    <h5 readonly
+                                                                                        id='info-fecha_ultimo_cambio'
+                                                                                        class='form-control'></h5>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class='form-group mx-4'>
+                                                                                <label for='info-cliente_actual'>Cliente
+                                                                                    actual</label>
+                                                                                <h5 readonly id='info-cliente_actual'
+                                                                                    class='form-control'></h5>
+                                                                            </div>
+                                                                            <div class='form-group mx-4'>
+                                                                                <label
+                                                                                    for='info-numeros_desvios'>Números
+                                                                                    de desvíos</label>
+                                                                                <textarea readonly
+                                                                                    id='info-numeros_desvios'
+                                                                                    class='form-control'></textarea>
+                                                                            </div>
+                                                                            <div class='form-group mx-4'>
+                                                                                <label
+                                                                                    for='info-entrega'>Entrega</label>
+                                                                                <h5 readonly id='info-id_entrega'
+                                                                                    class='form-control'></h5>
+                                                                            </div>
+                                                                            <div class='form-group mx-4'>
+                                                                                <label
+                                                                                    for='info-observaciones'>Observaciones</label>
+                                                                                <textarea readonly
+                                                                                    id='info-observaciones'
+                                                                                    class='form-control'></textarea>
+                                                                            </div>
+                                                                            <div class='form-group mx-4'>
+                                                                                <label for='info-motivo_baja'>Motivo de
+                                                                                    baja</label>
+                                                                                <h5 readonly id='info-id_motivo_baja'
+                                                                                    class='form-control'></h5>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary"
+                                                                            data-bs-dismiss="modal">Cerrar</button>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
-
-                                                        <!-- Modal info-->
-                                                        <div class="modal fade " id="modal-info" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
-                                                            <div class="modal-dialog " role="document">
-                                                                <div id="modalcssinfo" class="modal-content ">
-                                                                    <div class="modal-header bg-info ">
-                                                                        <h4 id="m-titulo" class="modal-title text-white mt-2 mb-0 p-0">+
-                                                                            info</h4>
-                                                                        <button type="button" class="" data-bs-dismiss="modal" aria-label="Cerrar">
-                                                                            <span aria-hidden="true">&times;</span>
-                                                                        </button>
-                                                                    </div>
-                                                                    <div class="modal-body">
-                                                                        <div class="form-group ">
-                                                                            <div class="form-group mb-4">
-                                                                                <div class=' d-flex justify-content-between mx-4'>
-                                                                                    <div class='form-group '>
-                                                                                        <label for='info-fecha_alta'>Fecha
-                                                                                            del alta</label>
-                                                                                        <h5 readonly id='info-fecha_alta' class='form-control'></h5>
-                                                                                    </div>
-                                                                                    <div class='form-group  ml-5'>
-                                                                                        <label for='info-fecha_ultimo_cambio'>Fecha
-                                                                                            ult.cambio</label>
-                                                                                        <h5 readonly id='info-fecha_ultimo_cambio' class='form-control'></h5>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div class='form-group mx-4'>
-                                                                                    <label for='info-cliente_actual'>Cliente
-                                                                                        actual</label>
-                                                                                    <h5 readonly id='info-cliente_actual' class='form-control'></h5>
-                                                                                </div>
-                                                                                <div class='form-group mx-4'>
-                                                                                    <label for='info-numeros_desvios'>Números
-                                                                                        de desvíos</label>
-                                                                                    <textarea readonly id='info-numeros_desvios' class='form-control'></textarea>
-                                                                                </div>
-                                                                                <div class='form-group mx-4'>
-                                                                                    <label for='info-entrega'>Entrega</label>
-                                                                                    <h5 readonly id='info-id_entrega' class='form-control'></h5>
-                                                                                </div>
-                                                                                <div class='form-group mx-4'>
-                                                                                    <label for='info-observaciones'>Observaciones</label>
-                                                                                    <textarea readonly id='info-observaciones' class='form-control'></textarea>
-                                                                                </div>
-                                                                                <div class='form-group mx-4'>
-                                                                                    <label for='info-motivo_baja'>Motivo de
-                                                                                        baja</label>
-                                                                                    <h5 readonly id='info-id_motivo_baja' class='form-control'></h5>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="modal-footer">
-                                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
                                                         <?php
                                                     };
 

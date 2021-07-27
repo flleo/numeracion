@@ -162,7 +162,7 @@ if (isset($_GET['a'])) {
             } else
                 $res = baja($tabla, $id);
         }
-        if ($res)  $actualiza = true;
+        if ($res === true)  $actualiza = true;
     }
     if ($tabla  == 'servidor') {
         if ($accion == 'ne' || $accion == 'ne-ck') {
@@ -180,10 +180,8 @@ function cargaSels($t, $ps)
     if ($actualiza) {
         $res = carga($t, '', "ORDER BY $t ASC");
         $admins[$t] = array($res);
-        //  $_SESSION['adms'] = $admins;
     } else
         $res = $admins[$t][0];
-    //array_push($ress,$res);
     if ($mensaje != '') {
         echo  '<div id="hideCargaSels">';
     } ?>
@@ -207,14 +205,19 @@ function cargaSel($res, $c)
         $op = $r[$c];
         $ac = $r['activo'];
         $bg = '';
-        if (!$ac) $bg = "text-danger";
+        $desactivado = '';
+        if (!$ac) {
+            $bg = "color:red;";
+            $desactivado = ' (Desactivado)';
+        }
         if ($op == $valor || $id == $idbin) {
             $idbin = $id;
-            echo "<option class='$bg' value=$id selected>";
+            //si no le ponemos las comillas a style lo iguala a selected si $bg es ''
+            echo "<option  class='admin' value=$id style='$bg' selected>"; 
         } else {
-            echo "<option class='$bg' value=$id >";
+            echo "<option  class='admin'  value=$id style=$bg>";
         }
-        echo $op . "</option>";
+        echo $op . $desactivado."</option>";
     }
 }
 
@@ -224,7 +227,7 @@ function cargaSel($res, $c)
 function cargaSelsServidor()
 {
     global $id, $mensaje, $admins, $actualiza;
-    $host = $ip = $des = '';
+    $host = $ip = $des  = '';
     $idbin = $id;
     if ($actualiza) {
         $res = carga('servidor', '', 'ORDER BY host ASC');
@@ -258,11 +261,15 @@ function cargaSelsServidor()
         $host = $r['host'];
         $ac = $r['activo'];
         $bg = '';
-        if (!$ac) $bg = "text-danger";
+        $desactivado = '';
+        if (!$ac) {
+            $bg = "color:red;";
+            $desactivado = ' (Desactivado)';
+        }
         if ($id == $idbin) {
-            echo "<option class='$bg' value='$id' selected>$host</option>";
+            echo "<option class='admin'  value='$id' selected style=$bg>".$host . $desactivado."</option>";
         } else {
-            echo "<option class='$bg' value='$id' >$host</option>";
+            echo "<option class='admin'  value='$id' style=$bg>".$host . $desactivado."</option>";
         }
     }
     echo '
@@ -323,9 +330,9 @@ function cargaSelsServidorNE()
         $ac = $r['activo'];
         if ($ac) {
             if ($id == $idbin) {
-                echo "<option  value='$id' selected>$host</option>";
+                echo "<option    value='$id' selected>$host</option>";
             } else {
-                echo "<option  value='$id' >$host</option>";
+                echo "<option   value='$id' >$host</option>";
             }
         }
     }
